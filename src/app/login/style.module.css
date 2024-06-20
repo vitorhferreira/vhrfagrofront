@@ -9,7 +9,13 @@
 
 .border {
     border: 2px;
-    border-color: #ccc;
+    border-color: #00b846;
     border-style: solid;
     padding: 20px;
+}
+.logo {
+    max-width: 40%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
 }

@@ -7,6 +7,7 @@ import { Toast } from '@/components/Toast';
 import { Loading } from '@/components/Loading';
 import { useRouter } from 'next/navigation';
 import { setCookie } from 'nookies';
+import Image from 'next/image';
 
 const Login = () => {
     const router = useRouter();
@@ -58,10 +59,11 @@ const Login = () => {
             />
             <div className={styles.main}>
                 <div className={styles.border}>
+                   <img className={styles.logo} src="https://png.pngtree.com/template/20190316/ourmid/pngtree-medical-health-logo-image_79571.jpg" alt="logo de vacina" width={500} height={300} />
                     <div className="d-flex flex-column align-items-center">
-                        <h1 className="text-primary">Login</h1>
+                        <h1 className="text-primary">Entrar </h1>
                         <p className="text-secondary">
-                            Preencha os campos para logar no sistema!
+                            Preencha os campos para entrar no sistema!
                         </p>
                     </div>
                     <hr />
@@ -72,28 +74,28 @@ const Login = () => {
                         ref={refForm}
                     >
                         <div className="col-md-12">
-                            <label htmlFor="email" className="form-label">
-                                Email
+                            <label htmlFor="cpf" className="form-label">
+                                CPF:
                             </label>
                             <input
-                                type="email"
+                                type="number"
                                 className="form-control"
-                                placeholder="Digite seu email:"
-                                id="email"
+                                placeholder="Digite seu CPF!"
+                                id="cpf"
                                 required
                             />
                             <div className="invalid-feedback">
-                                Por favor digite seu email!
+                                Por favor digite seu CPF!
                             </div>
                         </div>
                         <div className="col-md-12 mt-1">
                             <label htmlFor="senha" className="form-label">
-                                Senha
+                                Senha:
                             </label>
                             <input
                                 type="password"
                                 className="form-control"
-                                placeholder="Digite sua senha:"
+                                placeholder="Digite sua senha!"
                                 id="senha"
                                 required
                             />

@@ -135,14 +135,14 @@
       {
         "id": 1,
         "nome": "Admin",
-        "email": "admin@gmail.com",
+        "cpf": "11111111111",
         "senha": "123",
         "permissoes": "admin"
       },
       {
         "id": 2,
         "nome": "Colaborador",
-        "email": "colaborador@gmail.com",
+        "cpf": "11111111111",
         "senha": "123",
         "permissoes": "colaborador"
       }
