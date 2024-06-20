@@ -1,4 +1,3 @@
-// Login.tsx
 'use client'
 import { SyntheticEvent, useCallback, useRef, useState } from 'react';
 import styles from './style.module.css';
@@ -7,7 +6,6 @@ import { Toast } from '@/components/Toast';
 import { Loading } from '@/components/Loading';
 import { useRouter } from 'next/navigation';
 import { setCookie } from 'nookies';
-import Image from 'next/image';
 
 const Login = () => {
     const router = useRouter();
@@ -22,13 +20,13 @@ const Login = () => {
             setLoading(true);
 
             const target = e.target as typeof e.target & {
-                email: { value: string };
+                cpf: { value: string };
                 senha: { value: string };
             };
 
             axios
                 .post('/api/login', {
-                    email: target.email.value,
+                    cpf: target.cpf.value,
                     senha: target.senha.value,
                 })
                 .then((resposta) => {
@@ -59,7 +57,13 @@ const Login = () => {
             />
             <div className={styles.main}>
                 <div className={styles.border}>
-                   <img className={styles.logo} src="https://png.pngtree.com/template/20190316/ourmid/pngtree-medical-health-logo-image_79571.jpg" alt="logo de vacina" width={500} height={300} />
+                    <img 
+                        className={styles.logo} 
+                        src="https://png.pngtree.com/template/20190316/ourmid/pngtree-medical-health-logo-image_79571.jpg" 
+                        alt="logo de vacina" 
+                        width={500} 
+                        height={300} 
+                    />
                     <div className="d-flex flex-column align-items-center">
                         <h1 className="text-primary">Entrar </h1>
                         <p className="text-secondary">
@@ -112,13 +116,11 @@ const Login = () => {
                                 Entrar
                             </button>
                         </div>
-                        {/* Botão de cadastro de usuário novo */}
                         <div className="col-md-12 mt-3">
                             <button
                                 className="btn btn-outline-primary w-100"
                                 type="button"
                                 onClick={() => {
-                                    // Implemente a lógica para redirecionar para a página de cadastro
                                     router.push('/cadastro');
                                 }}
                             >

@@ -1,54 +1,45 @@
-import axios from "axios"
-import { NextResponse } from "next/server"
-import jwt from 'jsonwebtoken'
+import axios from "axios";
+import { NextResponse } from "next/server";
+import jwt from 'jsonwebtoken';
 
 export async function POST(req: Request) {
-    const { email, senha } = await req.json()
+    const { cpf, senha } = await req.json();
 
     try {
-
         let usuario = await axios.get(
-            "http://localhost:3001/usuarios?email="
-            +
-            email
-        )
+            `http://localhost:3001/usuarios?cpf=${cpf}`
+        );
 
-        console.log(usuario)
+        console.log(usuario);
 
         if (usuario.data.length === 1) {
             if (usuario.data[0].senha === senha) {
-
-                let objUsuario = usuario.data[0]
-
-                delete objUsuario.senha
+                let objUsuario = usuario.data[0];
+                delete objUsuario.senha;
 
                 const token = jwt.sign(
                     objUsuario,
-                    '123465',//secret
+                    '123465', // secret
                     {
-                        // expiresIn: '1min'// dias
-                        expiresIn: '1d'// dias
-                        // expiresIn: '1h'// horas
-                        // expiresIn: '1min'// minutos
+                        expiresIn: '1d' // 1 dia
                     }
-                )
+                );
 
-                return NextResponse.json({token: token})
-                
+                return NextResponse.json({ token: token });
             }
         }
 
         return NextResponse.json({
             message: "Dados incorretos"
-        }, { status: 401 })
+        }, { status: 401 });
 
     } catch (err) {
-        console.log(err)
+        console.log(err);
         return NextResponse.json(
             {
                 message: 'Erro interno'
             },
             { status: 500 }
-        )
+        );
     }
 }
