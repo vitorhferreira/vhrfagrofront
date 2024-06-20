@@ -69,7 +69,7 @@ const Cadastro = () => {
                         <div className="mb-3">
                             <label htmlFor="cpf" className="form-label">CPF</label>
                             <input
-                                type="text"
+                                type="number"
                                 className="form-control"
                                 id="cpf"
                                 value={cpf}
