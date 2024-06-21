@@ -24,14 +24,13 @@ const Login = () => {
                 senha: { value: string };
             };
 
-            axios
-                .post('/api/login', {
+            axios.post('http://127.0.0.1:8000/api/login', {
                     cpf: target.cpf.value,
                     senha: target.senha.value,
                 })
                 .then((resposta) => {
                     setCookie(undefined, 'painel1pitchau.token', resposta.data.token);
-                    router.push('/dashboard');
+                    router.push('/cadastro');
                     setLoading(false);
                 })
                 .catch((err) => {

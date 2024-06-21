@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation'; // Corrigindo importação para useRouter
 import axios from 'axios';
+import { Toast } from 'react-bootstrap';
 
 const Cadastro = () => {
     const router = useRouter();
-
+    const [toast, setToast] = useState(false);
     const [nome, setNome] = useState<string>('');
     const [cpf, setCpf] = useState<number | string>(''); // CPF agora é do tipo número ou string
     const [senha, setSenha] = useState<string>('');
@@ -16,10 +17,10 @@ const Cadastro = () => {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         console.log('Formulário enviado:', { nome, cpf, senha, idade });
-        
+    
         // Exemplo de requisição usando axios para enviar os dados para a API
         try {
-            const response = await axios.post('/api/cadastro', {
+            const response = await axios.post('http://127.0.0.1:8000/api/cadpacientes', {
                 nome,
                 cpf,
                 senha,
@@ -34,9 +35,10 @@ const Cadastro = () => {
             setIdade(0);
             setTimeout(() => {
                 setCadastrado(false); // Após 3 segundos, esconde a mensagem de cadastro
-                router.push('/login'); // Redireciona para a página de login após o cadastro
+                router.push('/cadastro'); // Redireciona para a página de login após o cadastro
             }, 3000);
         } catch (error) {
+          
             console.error('Erro ao cadastrar usuário:', error);
             // Tratamento de erro, exibição de mensagem, etc.
         }
@@ -50,7 +52,10 @@ const Cadastro = () => {
     };
 
     return (
+        
         <div className="container mt-5">
+            
+            
             <div className="card">
                 <div className="card-body">
                     <h2 className="text-primary">Cadastro de Usuário</h2>
@@ -102,6 +107,8 @@ const Cadastro = () => {
                         </div>
                         <button type="submit" className="btn btn-primary">Cadastrar</button>
                     </form>
+                    <a className="btn btn-primary" href="/listausuario">Manutenção de Usuarios</a>
+                    {/* router.push('/cadastro'); */}
                     {cadastrado && (
                         <div className="alert alert-success mt-3" role="alert">
                             Usuário cadastrado com sucesso! Redirecionando para o login...
