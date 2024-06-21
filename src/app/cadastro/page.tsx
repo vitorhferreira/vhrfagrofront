@@ -38,7 +38,6 @@ const Cadastro = () => {
                 router.push('/cadastro'); // Redireciona para a página de login após o cadastro
             }, 3000);
         } catch (error) {
-          
             console.error('Erro ao cadastrar usuário:', error);
             // Tratamento de erro, exibição de mensagem, etc.
         }
@@ -52,10 +51,7 @@ const Cadastro = () => {
     };
 
     return (
-        
         <div className="container mt-5">
-            
-            
             <div className="card">
                 <div className="card-body">
                     <h2 className="text-primary">Cadastro de Usuário</h2>
@@ -74,7 +70,7 @@ const Cadastro = () => {
                         <div className="mb-3">
                             <label htmlFor="cpf" className="form-label">CPF</label>
                             <input
-                                type="number"
+                                type="text"
                                 className="form-control"
                                 id="cpf"
                                 value={cpf}
@@ -105,13 +101,17 @@ const Cadastro = () => {
                                 required
                             />
                         </div>
-                        <button type="submit" className="btn btn-primary">Cadastrar</button>
+                        <div className="d-flex justify-content-between">
+                            <div>
+                                <button type="submit" className="btn btn-primary me-2">Cadastrar</button>
+                                <a className="btn btn-secondary" href="/login">Voltar</a>
+                            </div>
+                            
+                        </div>
                     </form>
-                    <a className="btn btn-primary" href="/listausuario">Manutenção de Usuarios</a>
-                    {/* router.push('/cadastro'); */}
                     {cadastrado && (
                         <div className="alert alert-success mt-3" role="alert">
-                            Usuário cadastrado com sucesso! Redirecionando para o login...
+                            Usuário cadastrado com sucesso! 
                         </div>
                     )}
                 </div>

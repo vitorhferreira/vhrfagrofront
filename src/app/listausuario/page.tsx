@@ -5,16 +5,17 @@ import Link from 'next/link';
 import styles from './users.module.css';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
+
 interface User {
     id: number;
     nome: string;
-    cpf: string; // Supondo que 'cpf' seja um campo válido
+    cpf: string;
     idade: number;
-    // Adicione outros campos conforme necessário
 }
 
 const Users = () => {
     const [users, setUsers] = useState<User[]>([]);
+    const [deleteAlert, setDeleteAlert] = useState(false); // Estado para controlar o alerta de exclusão
     const router = useRouter();
 
     useEffect(() => {
@@ -24,27 +25,42 @@ const Users = () => {
     const fetchUsers = async () => {
         try {
             const response = await axios.get('http://127.0.0.1:8000/api/pacientes');
-            console.log(response)
             setUsers(response.data);
-            
         } catch (error) {
             console.error('Erro ao buscar usuários:', error);
         }
     };
 
     const deleteUser = async (id: any) => {
-
         try {
             await axios.delete(`http://127.0.0.1:8000/api/pacientes/${id}`);
             fetchUsers(); // Recarregar a lista de usuários após a exclusão
-            toast.success('Usuário deletado com sucesso!');
+            setDeleteAlert(true); // Mostrar o alerta de exclusão
         } catch (error) {
             console.error('Erro ao excluir usuário:', error);
         }
     };
 
+    // Efeito para esconder o alerta após alguns segundos
+    useEffect(() => {
+        let timeout: NodeJS.Timeout;
+        if (deleteAlert) {
+            timeout = setTimeout(() => {
+                setDeleteAlert(false);
+            }, 3000); // Esconder o alerta após 3 segundos
+        }
+        return () => clearTimeout(timeout);
+    }, [deleteAlert]);
+
     return (
         <div className={styles.container}>
+            {deleteAlert && (
+                <div className="alert alert-success alert-dismissible fade show" role="alert">
+                    Usuário deletado com sucesso!
+                    <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close" onClick={() => setDeleteAlert(false)}></button>
+                </div>
+            )}
+            <a className="btn btn-secondary" href="/dashboard">Voltar</a>
             <h1>Lista de Usuários</h1>
             <table className={styles.table}>
                 <thead className={styles.thead}>
@@ -62,9 +78,9 @@ const Users = () => {
                             <td className={styles.td}>{user.cpf}</td>
                             <td className={styles.td}>{user.idade}</td>
                             <td className={styles.td}>
-                            <button className='btn btn-primary' onClick={()=> router.push(`/editaruser?id=${user.id}`)}>
+                                <button className='btn btn-primary' onClick={() => router.push(`/editaruser?id=${user.id}`)}>
                                     Editar
-                            </button>
+                                </button>
                                 <button
                                     className={`${styles.button} ${styles.buttonDelete}`}
                                     onClick={() => deleteUser(user.id)}

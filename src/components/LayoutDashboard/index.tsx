@@ -14,7 +14,7 @@ export const LayoutDashboard = (props: IProps) => {
             >
                 <a className="navbar-brand col-md-3 col-lg-2 me-0 px-3"
                     href="/dashboard">
-                    Sistema de Saude
+                    Sistema de Saúde
                 </a>
                 <button
                     className="navbar-toggler position-absolute d-md-none collapsed"
@@ -44,16 +44,16 @@ export const LayoutDashboard = (props: IProps) => {
                     >
                         <div className="position-sticky pt-3">
                             <ul className="nav flex-column">
-                                <li className="nav-item">
+                                <li className="nav-item mb-3">
                                     <a
                                         className={`nav-link`}
-                                        href={'/dashboard'}
+                                        href={'/vacina'}
                                     >
                                         <span data-feather="home"></span>
-                                        Suas Vacinas
+                                        Vacinas
                                     </a>
                                 </li>
-                                <li className="nav-item">
+                                <li className="nav-item mb-3">
                                     <a
                                         className={`nav-link`}
                                         href={'/agendamentos'}
@@ -62,11 +62,23 @@ export const LayoutDashboard = (props: IProps) => {
                                         Agendamentos
                                     </a>
                                 </li>
+                                <li className="nav-item mb-3">
+                                    <a
+                                        className={`nav-link`}
+                                        href={'/medicos'}
+                                    >
+                                        <span data-feather="home"></span>
+                                        Medicos
+                                    </a>
+                                </li>
+                                <li className="nav-item mb-3">
+                                    <a className="btn btn-secondary" href="/listausuario">Manutenção de Usuários</a>
+                                </li>
                                 {
                                     validaPermissao(props.token,
                                         ['admin', 'visitante']
                                     ) &&
-                                    <li className="nav-item">
+                                    <li className="nav-item mb-3">
                                         <a
                                             className={`nav-link`}
                                             href={'/usuarios'}

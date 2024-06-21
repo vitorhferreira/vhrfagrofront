@@ -30,7 +30,7 @@ const Login = () => {
                 })
                 .then((resposta) => {
                     setCookie(undefined, 'painel1pitchau.token', resposta.data.token);
-                    router.push('/cadastro');
+                    router.push('/dashboard');
                     setLoading(false);
                 })
                 .catch((err) => {
@@ -64,7 +64,7 @@ const Login = () => {
                         height={300} 
                     />
                     <div className="d-flex flex-column align-items-center">
-                        <h1 className="text-primary">Entrar </h1>
+                        <h1 className="text-primary">Sistema de Saúde </h1>
                         <p className="text-secondary">
                             Preencha os campos para entrar no sistema!
                         </p>
@@ -123,7 +123,7 @@ const Login = () => {
                                     router.push('/cadastro');
                                 }}
                             >
-                                Cadastrar seu Usuario
+                                Cadastrar seu Usuário
                             </button>
                         </div>
                     </form>
