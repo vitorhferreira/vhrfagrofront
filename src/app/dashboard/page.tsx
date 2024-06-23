@@ -1,26 +1,29 @@
+// 'use client'
 import { LayoutDashboard } from "@/components/LayoutDashboard";
 import { cookies } from 'next/headers';
 import { redirect } from "next/navigation";
 import { verificaTokenExpirado } from "@/services/token";
 import Carousel from 'react-bootstrap/Carousel';    
 
-export default function Dashboard() {
+export default function Dashboard({searchParams} : {searchParams: {id: string}}) {
     const cookie = cookies();
     const token = cookie.get('painel1pitchau.token');
-
+    // return
     if (!token?.value || verificaTokenExpirado(token.value)) {
         redirect('/login');
         return null; // Para evitar renderizar conteúdo se não autenticado
     }
 
+    
     return (
+        <>
         <LayoutDashboard token={token.value}>
             <div className="container-fluid">
                 <div className="row">
                     <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column">
                         <div className="my-4">
                             <h2 className="mb-4">Depoimentos e Casos de Sucesso:</h2>
-                            <Carousel className="mb-4">
+                            {/* <Carousel className="mb-4">
                                 <Carousel.Item>
                                     <img
                                         className="d-block w-100"
@@ -54,7 +57,7 @@ export default function Dashboard() {
                                         <p>Descrição da terceira imagem.</p>
                                     </Carousel.Caption>
                                 </Carousel.Item>
-                            </Carousel>
+                            </Carousel> */}
 
                             <div className="card mb-4">
                                 <div className="card-body">
@@ -124,5 +127,6 @@ export default function Dashboard() {
                 </div>
             </footer>
         </LayoutDashboard>
+        </>
     );
 }

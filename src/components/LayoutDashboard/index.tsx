@@ -7,6 +7,7 @@ interface IProps {
 }
 
 export const LayoutDashboard = (props: IProps) => {
+   
     return (
         <>
             <header
@@ -75,13 +76,14 @@ export const LayoutDashboard = (props: IProps) => {
                                     <a className="btn btn-secondary" href="/listausuario">Manutenção de Usuários</a>
                                 </li>
                                 {
+                                    
                                     validaPermissao(props.token,
                                         ['admin', 'visitante']
                                     ) &&
                                     <li className="nav-item mb-3">
                                         <a
                                             className={`nav-link`}
-                                            href={'/usuarios'}
+                                            href={'/cadastro'}
                                         >
                                             <span data-feather="home"></span>
                                             Usuários

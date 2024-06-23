@@ -34,10 +34,12 @@ const Users = () => {
     const deleteUser = async (id: any) => {
         try {
             await axios.delete(`http://127.0.0.1:8000/api/pacientes/${id}`);
+            
+            toast.success('Paciente deletado com sucesso!');
             fetchUsers(); // Recarregar a lista de usuários após a exclusão
             setDeleteAlert(true); // Mostrar o alerta de exclusão
         } catch (error) {
-            console.error('Erro ao excluir usuário:', error);
+            toast.error('Erro ao deletar paciente!');
         }
     };
 
@@ -53,6 +55,7 @@ const Users = () => {
     }, [deleteAlert]);
 
     return (
+        <>
         <div className={styles.container}>
             {deleteAlert && (
                 <div className="alert alert-success alert-dismissible fade show" role="alert">
@@ -93,6 +96,7 @@ const Users = () => {
                 </tbody>
             </table>
         </div>
+        </>
     );
 };
 

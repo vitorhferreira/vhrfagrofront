@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation'; // Corrigindo importação para useRouter
 import axios from 'axios';
-import { Toast } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 
 const Cadastro = () => {
     const router = useRouter();
-    const [toast, setToast] = useState(false);
+    // const [toast, setToast] = useState(false);
     const [nome, setNome] = useState<string>('');
     const [cpf, setCpf] = useState<number | string>(''); // CPF agora é do tipo número ou string
     const [senha, setSenha] = useState<string>('');
@@ -26,7 +26,8 @@ const Cadastro = () => {
                 senha,
                 idade
             });
-            console.log('Cadastro realizado com sucesso!', response.data);
+
+            toast.success('Paciente cadastrado com sucesso!');
             setCadastrado(true); // Define o estado para exibir mensagem de cadastro
             // Limpa os campos após o cadastro
             setNome('');
@@ -38,7 +39,8 @@ const Cadastro = () => {
                 router.push('/cadastro'); // Redireciona para a página de login após o cadastro
             }, 3000);
         } catch (error) {
-            console.error('Erro ao cadastrar usuário:', error);
+           
+            toast.error('erro ao cadastrado pasciente!');;
             // Tratamento de erro, exibição de mensagem, etc.
         }
     };

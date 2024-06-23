@@ -32,6 +32,7 @@ const Login = () => {
                     setCookie(undefined, 'painel1pitchau.token', resposta.data.token);
                     router.push('/dashboard');
                     setLoading(false);
+                    
                 })
                 .catch((err) => {
                     console.log(err);
