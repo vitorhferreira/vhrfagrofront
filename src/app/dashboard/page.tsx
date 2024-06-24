@@ -27,7 +27,9 @@ export default function Dashboard({searchParams} : {searchParams: {id: string}})
                                 alt="Imagem de destaque"
                                 className="img-fluid mb-4"
                             />
-
+                            
+                            <iframe jsname="L5Fo6c" class="YMEQtf KfXz0b" sandbox="allow-scripts allow-popups allow-forms allow-same-origin allow-popups-to-escape-sandbox allow-downloads allow-modals allow-storage-access-by-user-activation" frameborder="0" aria-label="Calendar, Atividades e Eventos" src="https://www.google.com/calendar/embed?color=%23a47ae2&amp;deb=-&amp;embed_style=WyJhdDplbWI6c3QiLCIjZTBlMGUwIiwiI2VkZWRlZCIsIiM0MTg0ZjMiLCJyb2JvdG8iLCIjNjM2MzYzIiw1MDAsIiNmZmYiXQo&amp;eopt=0&amp;mode=agenda&amp;showCalendars=1&amp;showPrint=0&amp;showTz=0&amp;src=c_102db2ba29a0536d02c7b45fb5fd19925752c569d086e200a82728a51c3077e1@group.calendar.google.com" allowfullscreen=""></iframe>
+                            <img src="https://lh4.googleusercontent.com/y8ACsMd5rPvQ3NTP3AIEC-JsnIY0duka7sqnd5qRZSIB2zyRCIO3LahheI-2ZDYo4W8MR7Vpwp5rHxfmRMPCgRgb5oDYXmXLbQemFfgTvvwKJzbOH8fJzGZzvZHq7exgDw=w1280" class="CENy8b"></img>
                             <h2 className="mb-4">Depoimentos e Casos de Sucesso:</h2>
                             <div className="card mb-4">
                                 <div className="card-body">
