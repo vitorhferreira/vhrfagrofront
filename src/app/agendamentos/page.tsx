@@ -186,7 +186,12 @@ const CadastroAgendamentoForm = ({ onAgendamentoCriado, agendaEdit }: { onAgenda
 
 // Componente para listar os agendamentos
 const ListaAgendamentos = ({ agendamentos, onAgendaEdit, onAgendamentoCriado }: { agendamentos: Agendamento[], onAgendaEdit: (agendamento: Agendamento) => void, onAgendamentoCriado: () => void  }) => {
-  
+  const [filteredAgendamentos, setFilteredAgendamentos] = useState<Agendamento[]>([]);
+
+  useEffect(()=> {
+    setFilteredAgendamentos(agendamentos)
+  },[agendamentos])
+
   const handleDelete = async (id: any) => {
     try {
       var response = await axios.delete(`http://127.0.0.1:8000/api/agendamentos/${id}`);
@@ -203,12 +208,20 @@ const ListaAgendamentos = ({ agendamentos, onAgendaEdit, onAgendamentoCriado }: 
     }
   };
 
+  const filterAgendamento = (cpf: string) => {
+    if(cpf !== ''){
+      setFilteredAgendamentos(agendamentos.filter(d => d.cpf.includes(cpf)))
+    }else{
+      setFilteredAgendamentos(agendamentos)
+    }
+  }
   
   return (
     <div>
       <h2>Lista de Agendamentos</h2>
+      <input placeholder="Filtrar por CPF" className="form-control mb-3" onChange={(e) => filterAgendamento(e.target.value)} />
       <ul>
-        {agendamentos.map((agendamento) => (
+        {filteredAgendamentos.map((agendamento) => (
           <li key={agendamento.id}>
             <strong>CPF:</strong> {agendamento.cpf}<br />
             <strong>Médico:</strong> {agendamento.medico}<br />
@@ -216,7 +229,7 @@ const ListaAgendamentos = ({ agendamentos, onAgendaEdit, onAgendamentoCriado }: 
             <strong>Telefone:</strong> {agendamento.telefone}<br />
             <strong>Hora:</strong> {agendamento.hora}<br />
             <strong>Local:</strong> {agendamento.local}<br />
-            <strong>Diagnostico:</strong> {agendamento.ldiagnostico}<br />
+            <strong>Diagnostico:</strong> {agendamento.diagnostico}<br />
             <div className="actions">
               <button className='btn btn-primary' onClick={() => onAgendaEdit(agendamento)}>Editar</button>
               <button className='btn btn-danger' onClick={() => handleDelete(agendamento.id)}>Excluir</button>
@@ -232,6 +245,7 @@ const ListaAgendamentos = ({ agendamentos, onAgendaEdit, onAgendamentoCriado }: 
 const Dashboard = () => {
   const router = useRouter();
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  
   const [agendaEdit, setAgendaEdit] = useState<Agendamento | null>(null);
   // const token = 'example_token'; // Substitua pelo seu método de obtenção de token
 
@@ -264,6 +278,8 @@ const Dashboard = () => {
   const handleAgendaEdit = (agendamento: Agendamento) => {
     setAgendaEdit(agendamento);
   };
+
+  
 
   // if (!token || verificaTokenExpirado(token)) {
   //   return null; // Redireciona para login se não autenticado

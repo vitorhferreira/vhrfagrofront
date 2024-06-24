@@ -136,6 +136,10 @@ interface Vacina {
 }
 // Componente para listar as vacinas
 const ListaVacinas = ({ vacinas, onVacinaEdit, onVacinaCriada }: { vacinas: Vacina[], onVacinaEdit: (vacina: Vacina) => void, onVacinaCriada: () => void }) => {
+  const [filteredVacinas, setFilteredVacinas] = useState<Vacina[]>(vacinas);
+  useEffect(() => {
+    setFilteredVacinas(vacinas)
+  }, [vacinas])
   // Retorno do componente de lista de vacinas
   const handleDelete = async (id: any) => {
     try {
@@ -153,12 +157,20 @@ const ListaVacinas = ({ vacinas, onVacinaEdit, onVacinaCriada }: { vacinas: Vaci
     }
   };
 
+  const filterVacina = (cpf: string) => {
+    if (cpf !== '') {
+      setFilteredVacinas(vacinas.filter(d => d.cpf.includes(cpf)))
+    } else {
+      setFilteredVacinas(vacinas)
+    }
+  }
 
   return (
     <div>
       <h2>Lista de Vacinas:</h2>
+      <input placeholder="Filtrar por CPF" className="form-control mb-3" onChange={(e) => filterVacina(e.target.value)} />
       <ul>
-        {vacinas.map((vacina) => (
+        {filteredVacinas.map((vacina) => (
           <li key={vacina.id}>
             <strong>Nome da Vacina:</strong> {vacina.nomedavacina}<br />
             <strong>CPF:</strong> {vacina.cpf}<br />
