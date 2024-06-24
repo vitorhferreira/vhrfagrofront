@@ -16,6 +16,7 @@ interface Agendamento {
   telefone: string;
   hora: string;
   local: string;
+  diagnostico: string;
 }
 interface MedicoData{
   id: number,
@@ -50,6 +51,7 @@ const CadastroAgendamentoForm = ({ onAgendamentoCriado, agendaEdit }: { onAgenda
       setValue('telefone', agendaEdit.telefone);
       setValue('hora', agendaEdit.hora);
       setValue('local', agendaEdit.local);
+      setValue('diagnostico', agendaEdit.diagnostico);
       setSelectedCpf(agendaEdit.cpf);
       setSelectedMedico(agendaEdit.medico);
     } else {
@@ -171,6 +173,10 @@ const CadastroAgendamentoForm = ({ onAgendamentoCriado, agendaEdit }: { onAgenda
         <label htmlFor="local" className="form-label">Local</label>
         <input type="text" className="form-control" id="local" {...register('local', { required: true })} />
       </div>
+      <div className="mb-3">
+        <label htmlFor="diagnostico" className="form-label">Diagnostico</label>
+        <input type="text" className="form-control" id="diagnostico" {...register('diagnostico', { required: true })} />
+      </div>
       <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? 'Salvando...' : 'Salvar'}
       </button>
@@ -210,6 +216,7 @@ const ListaAgendamentos = ({ agendamentos, onAgendaEdit, onAgendamentoCriado }: 
             <strong>Telefone:</strong> {agendamento.telefone}<br />
             <strong>Hora:</strong> {agendamento.hora}<br />
             <strong>Local:</strong> {agendamento.local}<br />
+            <strong>Diagnostico:</strong> {agendamento.ldiagnostico}<br />
             <div className="actions">
               <button className='btn btn-primary' onClick={() => onAgendaEdit(agendamento)}>Editar</button>
               <button className='btn btn-danger' onClick={() => handleDelete(agendamento.id)}>Excluir</button>
