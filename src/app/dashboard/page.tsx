@@ -14,7 +14,6 @@ export default function Dashboard({searchParams} : {searchParams: {id: string}})
         return null; // Para evitar renderizar conteúdo se não autenticado
     }
 
-    
     return (
         <>
         <LayoutDashboard token={token.value}>
@@ -22,43 +21,14 @@ export default function Dashboard({searchParams} : {searchParams: {id: string}})
                 <div className="row">
                     <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column">
                         <div className="my-4">
-                            <h2 className="mb-4">Depoimentos e Casos de Sucesso:</h2>
-                            {/* <Carousel className="mb-4">
-                                <Carousel.Item>
-                                    <img
-                                        className="d-block w-100"
-                                        src="https://via.placeholder.com/800x400?text=Imagem+1"
-                                        alt="Primeiro slide"
-                                    />
-                                    <Carousel.Caption>
-                                        <h3>Primeiro Slide</h3>
-                                        <p>Descrição da primeira imagem.</p>
-                                    </Carousel.Caption>
-                                </Carousel.Item>
-                                <Carousel.Item>
-                                    <img
-                                        className="d-block w-100"
-                                        src="https://via.placeholder.com/800x400?text=Imagem+2"
-                                        alt="Segundo slide"
-                                    />
-                                    <Carousel.Caption>
-                                        <h3>Segundo Slide</h3>
-                                        <p>Descrição da segunda imagem.</p>
-                                    </Carousel.Caption>
-                                </Carousel.Item>
-                                <Carousel.Item>
-                                    <img
-                                        className="d-block w-100"
-                                        src="https://via.placeholder.com/800x400?text=Imagem+3"
-                                        alt="Terceiro slide"
-                                    />
-                                    <Carousel.Caption>
-                                        <h3>Terceiro Slide</h3>
-                                        <p>Descrição da terceira imagem.</p>
-                                    </Carousel.Caption>
-                                </Carousel.Item>
-                            </Carousel> */}
+                            {/* Imagem acima dos depoimentos */}
+                            <img
+                                src="https://lh5.googleusercontent.com/WRqiXPOZQzsbgwmdz0-Z5dZ-sEkrfAioa-8cloG8lJjLQjZ0jlp6E472ZGBeu10Adf9oynORdpJRIoN62CY4xZ-F2gb8h3xsJViSfuzwnzTzr8mt2qZAX7JELwHPngacSA=w1280" // URL da imagem desejada
+                                alt="Imagem de destaque"
+                                className="img-fluid mb-4"
+                            />
 
+                            <h2 className="mb-4">Depoimentos e Casos de Sucesso:</h2>
                             <div className="card mb-4">
                                 <div className="card-body">
                                     <h3 className="card-title">Depoimentos de Pacientes:</h3>
@@ -120,8 +90,8 @@ export default function Dashboard({searchParams} : {searchParams: {id: string}})
                         </div>
                         <div className="col-md-6">
                             <h3>Endereço:</h3>
-                            <p>Rua Fictícia, 123 - Cidade Fictícia</p>
-                            <p>CEP: 12345-678 - Telefone: (12) 3456-7890</p>
+                            <p>Rua Fictícia, 123 - Umuarama/PR</p>
+                            <p>CEP: 12345-678 - Telefone: (44) 3456-7890</p>
                         </div>
                     </div>
                 </div>
