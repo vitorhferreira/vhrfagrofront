@@ -102,7 +102,7 @@ const CadastroVacinaForm = ({ onVacinaCriada, vacinaEdit }: { onVacinaCriada: ()
           <option value="">Selecione um Paciente</option>
           {pacienteOption.map(paciente => (
             <option key={paciente.id} value={paciente.cpf}>
-              {paciente.nome}
+              {`${paciente.cpf} - ${paciente.nome}`}
             </option>
           ))}
         </select>

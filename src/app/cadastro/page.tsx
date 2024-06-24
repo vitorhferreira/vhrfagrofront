@@ -40,7 +40,7 @@ const Cadastro = () => {
             }, 3000);
         } catch (error) {
            
-            toast.error('erro ao cadastrado pasciente!');;
+            toast.error('erro ao cadastrar paciente!');;
             // Tratamento de erro, exibição de mensagem, etc.
         }
     };
