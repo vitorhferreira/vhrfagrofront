@@ -11,12 +11,11 @@ const Cadastro = () => {
     const [nome, setNome] = useState<string>('');
     const [cpf, setCpf] = useState<number | string>(''); // CPF agora é do tipo número ou string
     const [senha, setSenha] = useState<string>('');
-    const [idade, setIdade] = useState<number>(0);
     const [cadastrado, setCadastrado] = useState<boolean>(false); // Estado para controlar exibição da mensagem de cadastro
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        console.log('Formulário enviado:', { nome, cpf, senha, idade });
+        console.log('Formulário enviado:', { nome, cpf, senha });
     
         // Exemplo de requisição usando axios para enviar os dados para a API
         try {

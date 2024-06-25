@@ -123,10 +123,10 @@ const Login = () => {
                                 className="btn btn-outline-primary w-100"
                                 type="button"
                                 onClick={() => {
-                                    router.push('/cadastro_usuario');
+                                    alert ('Entre em contato com a equipe do centro de saude')
                                 }}
                             >
-                                Cadastrar seu Usuário
+                                Esqueci a Senha
                             </button>
                         </div>
                     </form>
