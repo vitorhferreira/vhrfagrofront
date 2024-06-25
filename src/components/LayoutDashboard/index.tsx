@@ -1,5 +1,9 @@
+'use client'
 import { validaPermissao } from "@/services/token";
-import { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import { destroyCookie, parseCookies } from "nookies";
+import { ReactNode, useEffect } from "react";
+
 
 interface IProps {
     children: ReactNode;
@@ -7,6 +11,15 @@ interface IProps {
 }
 
 export const LayoutDashboard = (props: IProps) => {
+    const cookie = parseCookies(undefined,'logado')
+
+    useEffect(() => {
+        console.log(cookie.logado)
+        if (!cookie || cookie.logado !== 'true') {
+          redirect('/login');
+        }
+    },[])
+    
     return (
         <>
             <header className="navbar navbar-dark sticky-top bg-primary flex-md-nowrap p-0">
@@ -28,7 +41,7 @@ export const LayoutDashboard = (props: IProps) => {
                 <div className="w-100"></div>
                 <div className="navbar-nav">
                     <div className="nav-item text-nowrap">
-                        <a className="nav-link px-3" href="/login">Sair</a>
+                        <a className="nav-link px-3" href="/login" >Sair</a>
                     </div>
                 </div>
             </header>

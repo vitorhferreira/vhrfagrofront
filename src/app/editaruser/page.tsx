@@ -30,7 +30,7 @@ const EditUser = ({searchParams} : {searchParams: {id: string}}) => {
 
     const handleChange = (e: any) => {
         const { name, value } = e.target;
-        setUser({ ...user, [name]: value });
+        setUser({ ...user, [name]: e.target.value });
     };
 
     const handleSubmit = async (e: any) => {

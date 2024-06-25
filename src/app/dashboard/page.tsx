@@ -7,20 +7,43 @@ import Carousel from 'react-bootstrap/Carousel';
 
 export default function Dashboard({searchParams} : {searchParams: {id: string}}) {
     const cookie = cookies();
-    const token = cookie.get('painel1pitchau.token');
+    const logado = cookie.get('logado');
     // return
-    if (!token?.value || verificaTokenExpirado(token.value)) {
+    if (!logado || logado.value !== 'true') {
         redirect('/login');
         return null; // Para evitar renderizar conteúdo se não autenticado
     }
 
     return (
         <>
-        <LayoutDashboard token={token.value}>
+        <LayoutDashboard token={logado.value}>
             <div className="container-fluid">
                 <div className="row">
                     <main className="col-md-12 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column">
                         <div className="my-4">
+                            {/* Imagem acima dos depoimentos */}
+                            <img
+                                src="https://cnm.org.br/storage/noticias/2023/Imagens/Sa%C3%BAde/image.jpg" // URL da imagem desejada
+                                alt="Imagem de destaque"
+                                className="img-fluid mb-4"
+                            />
+                            
+                            <iframe jsname="L5Fo6c" class="YMEQtf KfXz0b" sandbox="allow-scripts allow-popups allow-forms allow-same-origin allow-popups-to-escape-sandbox allow-downloads allow-modals allow-storage-access-by-user-activation" frameborder="0" aria-label="Calendar, Atividades e Eventos" src="https://www.google.com/calendar/embed?color=%23a47ae2&amp;deb=-&amp;embed_style=WyJhdDplbWI6c3QiLCIjZTBlMGUwIiwiI2VkZWRlZCIsIiM0MTg0ZjMiLCJyb2JvdG8iLCIjNjM2MzYzIiw1MDAsIiNmZmYiXQo&amp;eopt=0&amp;mode=agenda&amp;showCalendars=1&amp;showPrint=0&amp;showTz=0&amp;src=c_102db2ba29a0536d02c7b45fb5fd19925752c569d086e200a82728a51c3077e1@group.calendar.google.com" allowfullscreen=""></iframe>
+                            <h2 className="mb-4">Depoimentos e Casos de Sucesso:</h2>
+                            <div className="card mb-4">
+                                <div className="card-body">
+                                    <h3 className="card-title">Depoimentos de Pacientes:</h3>
+                                    <p className="card-text">
+                                        "Minha experiência no posto de saúde foi incrível! 
+                                        Recebi um atendimento atencioso e eficiente."
+                                    </p>
+                                    <p className="card-text">
+                                        "A equipe médica foi muito competente e me ajudou
+                                        a resolver meu problema de saúde rapidamente."
+                                    </p>
+                                </div>
+                            </div>
+
                             <div className="card mb-4">
                                 <div className="card-body">
                                     <h3 className="card-title">Estudos de Caso:</h3>

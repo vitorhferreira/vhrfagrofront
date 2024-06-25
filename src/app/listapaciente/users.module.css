@@ -1,37 +1,82 @@
-/* pages/Users.module.css */
 .container {
+    margin: 0 auto;
     padding: 20px;
+    max-width: 800px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.alert {
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+
+.buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.filterInput {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
 }
 
 .table {
     width: 100%;
     border-collapse: collapse;
+    margin-top: 20px;
 }
 
 .thead {
-    background-color: #f2f2f2;
+    background-color: #007bff;
+    color: white;
 }
 
 .th, .td {
     padding: 10px;
-    text-align: left;
     border: 1px solid #ddd;
+    text-align: left;
+}
+
+.td {
+    background-color: #fff;
 }
 
 .button {
-    margin-right: 5px;
     padding: 5px 10px;
-    color: #fff;
-    background-color: #0070f3;
     border: none;
-    border-radius: 5px;
     cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
 }
 
 .buttonDelete {
-    background-color: #e60000;
+    background-color: #dc3545;
+    color: white;
+    margin-left: 10px;
 }
 
-.button:hover {
-    opacity: 0.8;
+.buttonDelete:hover {
+    background-color: #c82333;
+}
+
+button.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+button.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+button.btn-close {
+    margin-left: 10px;
 }

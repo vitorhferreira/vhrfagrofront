@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import {  useRouter } from 'next/navigation';
 import { LayoutDashboard } from '@/components/LayoutDashboard';
 import { verificaTokenExpirado } from '@/services/token';
 import { useForm } from 'react-hook-form';
@@ -32,6 +32,7 @@ interface Paciente{
   cpf: string,
   idade: number
 }
+
 // Componente para o formulário de cadastro de agendamento
 const CadastroAgendamentoForm = ({ onAgendamentoCriado, agendaEdit }: { onAgendamentoCriado: () => void,   agendaEdit?: Agendamento} ) => {
   const { register, handleSubmit, reset, setValue } = useForm<Agendamento>();
@@ -131,6 +132,8 @@ const CadastroAgendamentoForm = ({ onAgendamentoCriado, agendaEdit }: { onAgenda
     register('medico', { required: true }); // Registrar o campo medico manualmente
   }, [register]);
 
+
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
 
@@ -187,6 +190,8 @@ const CadastroAgendamentoForm = ({ onAgendamentoCriado, agendaEdit }: { onAgenda
 // Componente para listar os agendamentos
 const ListaAgendamentos = ({ agendamentos, onAgendaEdit, onAgendamentoCriado }: { agendamentos: Agendamento[], onAgendaEdit: (agendamento: Agendamento) => void, onAgendamentoCriado: () => void  }) => {
   const [filteredAgendamentos, setFilteredAgendamentos] = useState<Agendamento[]>([]);
+
+  
 
   useEffect(()=> {
     setFilteredAgendamentos(agendamentos)

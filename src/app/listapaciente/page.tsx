@@ -10,7 +10,7 @@ interface User {
     id: number;
     nome: string;
     cpf: string;
-    idade: number;
+    nascimento: date;
 }
 
 const Users = () => {
@@ -71,7 +71,7 @@ const Users = () => {
                     <tr>
                         <th className={styles.th}>Nome</th>
                         <th className={styles.th}>CPF</th>
-                        <th className={styles.th}>Idade</th>
+                        <th className={styles.th}>Data de Nascimento</th>
                         <th className={styles.th}>Ações</th>
                     </tr>
                 </thead>
@@ -80,9 +80,9 @@ const Users = () => {
                         <tr key={user.id}>
                             <td className={styles.td}>{user.nome}</td>
                             <td className={styles.td}>{user.cpf}</td>
-                            <td className={styles.td}>{user.idade}</td>
+                            <td className={styles.td}>{user.nascimento}</td>
                             <td className={styles.td}>
-                                <button className='btn btn-primary' onClick={() => router.push(`/editaruser?id=${user.id}`)}>
+                                <button className='btn btn-primary' onClick={() => router.push(`/editarpaciente?id=${user.id}`)}>
                                     Editar
                                 </button>
                                 <button

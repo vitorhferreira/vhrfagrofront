@@ -1,17 +1,19 @@
 'use client'
-import { SyntheticEvent, useCallback, useRef, useState } from 'react';
+import { SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 import styles from './style.module.css';
 import axios from 'axios';
 import { Toast } from '@/components/Toast';
 import { Loading } from '@/components/Loading';
 import { useRouter } from 'next/navigation';
-import { setCookie } from 'nookies';
+import { destroyCookie, setCookie } from 'nookies';
 
 const Login = () => {
     const router = useRouter();
     const refForm = useRef<any>();
     const [toast, setToast] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {setCookie(undefined, 'logado', 'false');},[])
 
     const submitForm = useCallback((e: SyntheticEvent) => {
         e.preventDefault();
@@ -29,7 +31,7 @@ const Login = () => {
                     senha: target.senha.value,
                 })
                 .then((resposta) => {
-                    setCookie(undefined, 'painel1pitchau.token', resposta.data.token);
+                    setCookie(undefined, 'logado', 'true');
                     router.push('/dashboard');
                     setLoading(false);
                     

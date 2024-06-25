@@ -11,12 +11,15 @@ const Cadastro = () => {
     const [nome, setNome] = useState<string>('');
     const [cpf, setCpf] = useState<number | string>(''); // CPF agora é do tipo número ou string
     const [senha, setSenha] = useState<string>('');
-    const [idade, setIdade] = useState<number>(0);
+    const [nascimento, setNascimento] = useState<date>(0);
     const [cadastrado, setCadastrado] = useState<boolean>(false); // Estado para controlar exibição da mensagem de cadastro
+    const handleNascimentoChange = (e) => {
+        setNascimento(e.target.value);
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        console.log('Formulário enviado:', { nome, cpf, senha, idade });
+        console.log('Formulário enviado:', { nome, cpf, senha, nascimento });
     
         // Exemplo de requisição usando axios para enviar os dados para a API
         try {
@@ -24,7 +27,7 @@ const Cadastro = () => {
                 nome,
                 cpf,
                 senha,
-                idade
+                nascimento
             });
             if(parseInt(response.data.sucesso) == 99){
                 toast.warning('CPF invalido');
@@ -38,7 +41,7 @@ const Cadastro = () => {
             setNome('');
             setCpf('');
             setSenha('');
-            setIdade(0);
+            setNascimento(0);
             setTimeout(() => {
                 setCadastrado(false); // Após 3 segundos, esconde a mensagem de cadastro
                 router.push('/cadastro'); // Redireciona para a página de login após o cadastro
@@ -55,6 +58,7 @@ const Cadastro = () => {
         if (value.length <= 11) { // Limita o tamanho do CPF para 11 dígitos
             setCpf(value);
         }
+        
     };
 
     return (
@@ -98,13 +102,13 @@ const Cadastro = () => {
                             />
                         </div>
                         <div className="mb-3">
-                            <label htmlFor="idade" className="form-label">Idade</label>
+                            <label htmlFor="nascimento" className="form-label">Data de Nascimento</label>
                             <input
-                                type="number"
+                                type="date"
                                 className="form-control"
-                                id="idade"
-                                value={idade || ''}
-                                onChange={(e) => setIdade(parseInt(e.target.value))}
+                                id="nascimento"
+                                value={nascimento}
+                                onChange={handleNascimentoChange}
                                 required
                             />
                         </div>

@@ -23,6 +23,10 @@ export const verificaTokenExpirado = (token: string | undefined) => {
     }
 };
 
+export const verificaLogado = () => {
+    
+}
+
 export const validaPermissao = (
     token: string | undefined,
     permissao: Array<string>
