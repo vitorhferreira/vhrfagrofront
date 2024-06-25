@@ -24,7 +24,7 @@ const Users = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get('http://127.0.0.1:8000/api/user');
+            const response = await axios.get('http://127.0.0.1:8000/api/pacientes');
             setUsers(response.data);
         } catch (error) {
             console.error('Erro ao buscar usuários:', error);
@@ -33,13 +33,13 @@ const Users = () => {
 
     const deleteUser = async (id: any) => {
         try {
-            await axios.delete(`http://127.0.0.1:8000/api/user/${id}`);
+            await axios.delete(`http://127.0.0.1:8000/api/pacientes/${id}`);
             
-            toast.success('Usuario deletado com sucesso!');
+            toast.success('Paciente deletado com sucesso!');
             fetchUsers(); // Recarregar a lista de usuários após a exclusão
             setDeleteAlert(true); // Mostrar o alerta de exclusão
         } catch (error) {
-            toast.error('Erro ao deletar Usuario!');
+            toast.error('Erro ao deletar paciente!');
         }
     };
 
@@ -59,18 +59,19 @@ const Users = () => {
         <div className={styles.container}>
             {deleteAlert && (
                 <div className="alert alert-success alert-dismissible fade show" role="alert">
-                    Usuário deletado com sucesso!
+                    Paciente deletado com sucesso!
                     <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close" onClick={() => setDeleteAlert(false)}></button>
                 </div>
             )}
             <a className="btn btn-secondary" href="/dashboard">Voltar</a>
-            <a className="btn btn-primary" href="/cadastro_usuario">Cadastro</a>
-            <h1>Lista de Usuários</h1>
+            <a className="btn btn-primary" href="/cadastro">Cadastro</a>
+            <h1>Lista de Pacientes</h1>
             <table className={styles.table}>
                 <thead className={styles.thead}>
                     <tr>
                         <th className={styles.th}>Nome</th>
                         <th className={styles.th}>CPF</th>
+                        <th className={styles.th}>Idade</th>
                         <th className={styles.th}>Ações</th>
                     </tr>
                 </thead>
@@ -79,6 +80,7 @@ const Users = () => {
                         <tr key={user.id}>
                             <td className={styles.td}>{user.nome}</td>
                             <td className={styles.td}>{user.cpf}</td>
+                            <td className={styles.td}>{user.idade}</td>
                             <td className={styles.td}>
                                 <button className='btn btn-primary' onClick={() => router.push(`/editaruser?id=${user.id}`)}>
                                     Editar

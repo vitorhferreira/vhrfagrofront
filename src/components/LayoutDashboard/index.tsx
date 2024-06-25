@@ -57,17 +57,11 @@ export const LayoutDashboard = (props: IProps) => {
                                     </a>
                                 </li>
                                 <li className="nav-item mb-3">
-                                    <a className="btn btn-secondary" href="/listausuario">Manutenção de Usuários</a>
+                                    <a className="btn btn-warning" href="/listausuario">Manutenção de Usuários</a>
                                 </li>
-                                {
-                                    validaPermissao(props.token, ['admin', 'visitante']) &&
-                                    <li className="nav-item mb-3">
-                                        <a className={`nav-link`} href={'/cadastro'}>
-                                            <span data-feather="home"></span>
-                                            Usuários
-                                        </a>
-                                    </li>
-                                }
+                                <li className="nav-item mb-3">
+                                    <a className="btn btn-warning" href="/listapaciente">Manutenção de Paciente</a>
+                                </li>
                             </ul>
                         </div>
                     </nav>

@@ -121,7 +121,7 @@ const Login = () => {
                                 className="btn btn-outline-primary w-100"
                                 type="button"
                                 onClick={() => {
-                                    router.push('/cadastro');
+                                    router.push('/cadastro_usuario');
                                 }}
                             >
                                 Cadastrar seu Usuário

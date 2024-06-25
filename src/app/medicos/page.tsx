@@ -21,10 +21,10 @@ interface Medico {
 
 // Componente para o formulário de cadastro de médicos
 const CadastroMedicoForm = ({ onMedicoCriado, medicoEdit }: { onMedicoCriado: () => void, medicoEdit?: Medico }) => {
-  const { register, handleSubmit, reset , setValue} = useForm<Medico>();
+  const { register, handleSubmit, reset, setValue } = useForm<Medico>();
   const [loading, setLoading] = useState(false);
 
-  
+
   useEffect(() => {
     if (medicoEdit) {
       setValue('nome', medicoEdit.nome);
@@ -42,11 +42,23 @@ const CadastroMedicoForm = ({ onMedicoCriado, medicoEdit }: { onMedicoCriado: ()
     setLoading(true);
     try {
       if (medicoEdit) {
-        await axios.put(`http://127.0.0.1:8000/api/medico/${medicoEdit.id}`, data); // URL da API para atualização
+        const response = await axios.put(`http://127.0.0.1:8000/api/medico/${medicoEdit.id}`, data); // URL da API para atualização
+
+        if (parseInt(response.data.sucesso) == 99) {
+          toast.warning('CPF invalido');
+          return
+        }
+
         toast.success('Medico atualizada com sucesso!');
         onMedicoCriado();
       } else {
-        await axios.post('http://127.0.0.1:8000/api/cadmedico', data); // URL da API a ser utilizada
+        const response = await axios.post('http://127.0.0.1:8000/api/cadmedico', data); // URL da API a ser utilizada
+
+        if (parseInt(response.data.sucesso) == 99) {
+          toast.warning('CPF invalido');
+          return
+        }
+
         toast.success('Médico cadastrado com sucesso!');
         onMedicoCriado(); // Atualiza a lista de médicos após cadastrar
         reset(); // Limpa o formulário
@@ -142,11 +154,11 @@ const Dashboard = () => {
   //     carregarMedicos(); // Carregar médicos ao montar o componente
   //   }
   // }, [token]);
-   useEffect(() => {
-   
-   
-      carregarMedicos(); // Carregar médicos ao montar o componente
-   
+  useEffect(() => {
+
+
+    carregarMedicos(); // Carregar médicos ao montar o componente
+
   }, []);
 
 
@@ -183,7 +195,7 @@ const Dashboard = () => {
               <div className="card mb-4">
                 <div className="card-body">
                   <h3 className="card-title">Cadastro de Médico</h3>
-                  <CadastroMedicoForm  onMedicoCriado={handleMedicoCriada} medicoEdit={medicoEdit}  />
+                  <CadastroMedicoForm onMedicoCriado={handleMedicoCriada} medicoEdit={medicoEdit} />
                 </div>
               </div>
 

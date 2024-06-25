@@ -20,32 +20,29 @@ const Cadastro = () => {
     
         // Exemplo de requisição usando axios para enviar os dados para a API
         try {
-            const response = await axios.post('http://127.0.0.1:8000/api/cadpacientes', {
+            const response = await axios.post('http://127.0.0.1:8000/api/caduser', {
                 nome,
                 cpf,
-                senha,
-                idade
+                senha
             });
             if(parseInt(response.data.sucesso) == 99){
                 toast.warning('CPF invalido');
                 return
             }
           
-
-            toast.success('Paciente cadastrado com sucesso!');
+            toast.success('Usuario cadastrado com sucesso!');
             setCadastrado(true); // Define o estado para exibir mensagem de cadastro
             // Limpa os campos após o cadastro
             setNome('');
             setCpf('');
             setSenha('');
-            setIdade(0);
             setTimeout(() => {
                 setCadastrado(false); // Após 3 segundos, esconde a mensagem de cadastro
                 router.push('/cadastro'); // Redireciona para a página de login após o cadastro
             }, 3000);
         } catch (error) {
            
-            toast.error('erro ao cadastrar paciente!');;
+            toast.error('erro ao cadastrar usuario!');;
             // Tratamento de erro, exibição de mensagem, etc.
         }
     };
@@ -61,7 +58,7 @@ const Cadastro = () => {
         <div className="container mt-5">
             <div className="card">
                 <div className="card-body">
-                    <h2 className="text-primary">Cadastro de Paciente</h2>
+                    <h2 className="text-primary">Cadastro de Usuário</h2>
                     <form onSubmit={handleSubmit}>
                         <div className="mb-3">
                             <label htmlFor="nome" className="form-label">Nome</label>
@@ -97,28 +94,17 @@ const Cadastro = () => {
                                 required
                             />
                         </div>
-                        <div className="mb-3">
-                            <label htmlFor="idade" className="form-label">Idade</label>
-                            <input
-                                type="number"
-                                className="form-control"
-                                id="idade"
-                                value={idade || ''}
-                                onChange={(e) => setIdade(parseInt(e.target.value))}
-                                required
-                            />
-                        </div>
                         <div className="d-flex justify-content-between">
                             <div>
                                 <button type="submit" className="btn btn-primary me-2">Cadastrar</button>
-                                <a className="btn btn-secondary" href="/dashboard">Voltar</a>
+                                <a className="btn btn-secondary" href="/login">Voltar</a>
                             </div>
                             
                         </div>
                     </form>
                     {cadastrado && (
                         <div className="alert alert-success mt-3" role="alert">
-                            Paciente cadastrado com sucesso! 
+                            Usuário cadastrado com sucesso! 
                         </div>
                     )}
                 </div>
