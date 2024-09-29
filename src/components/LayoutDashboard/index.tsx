@@ -24,7 +24,7 @@ export const LayoutDashboard = (props: IProps) => {
         <>
             <header className="navbar navbar-dark sticky-top bg-primary flex-md-nowrap p-0">
                 <a className="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="/dashboard">
-                    <span className="fs-4 fw-bold">Sistema de Saúde</span>
+                    <span className="fs-4 fw-bold">VHRF AGRO</span>
                 </a>
                 <button
                     className="navbar-toggler position-absolute d-md-none collapsed"
@@ -52,28 +52,44 @@ export const LayoutDashboard = (props: IProps) => {
                         <div className="position-sticky pt-3">
                             <ul className="nav flex-column">
                                 <li className="nav-item mb-3">
-                                    <a className={`nav-link`} href={'/vacina'}>
+                                    <a className={`nav-link`} href={'/lotes'}>
+                                        <span data-feather="home"></span>
+                                        Registrar Lote
+                                    </a>
+                                </li>
+                                <li className="nav-item mb-3">
+                                    <a className={`nav-link`} href={'/Vacinas'}>
                                         <span data-feather="home"></span>
                                         Vacinas
                                     </a>
                                 </li>
                                 <li className="nav-item mb-3">
-                                    <a className={`nav-link`} href={'/agendamentos'}>
+                                    <a className={`nav-link`} href={'/gastosVet'}>
                                         <span data-feather="home"></span>
-                                        Agendamentos
+                                        Despesas e Pagamentos
                                     </a>
                                 </li>
                                 <li className="nav-item mb-3">
-                                    <a className={`nav-link`} href={'/medicos'}>
+                                    <a className={`nav-link`} href={'/racao'}>
                                         <span data-feather="home"></span>
-                                        Médicos
+                                        Consumo de Ração
                                     </a>
                                 </li>
+                                <li className="nav-item mb-3">
+                                    <a className={`nav-link`} /*href={'/agendamentos'}*/>
+                                        <span data-feather="home"></span>
+                                        Registrar Venda
+                                    </a>
+                                </li>
+                                <li className="nav-item mb-3">
+                                    <a className={`nav-link`} /*href={'/relatorios'}*/>
+                                        <span data-feather="home"></span>
+                                        Relatorios
+                                    </a>
+                                </li>
+
                                 <li className="nav-item mb-3">
                                     <a className="btn btn-warning" href="/listausuario">Manutenção de Usuários</a>
-                                </li>
-                                <li className="nav-item mb-3">
-                                    <a className="btn btn-warning" href="/listapaciente">Manutenção de Paciente</a>
                                 </li>
                             </ul>
                         </div>

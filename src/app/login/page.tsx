@@ -61,13 +61,13 @@ const Login = () => {
                 <div className={styles.border}>
                     <img 
                         className={styles.logo} 
-                        src="https://png.pngtree.com/template/20190316/ourmid/pngtree-medical-health-logo-image_79571.jpg" 
-                        alt="logo de vacina" 
+                        src="https://seeklogo.com/images/N/nelore-logo-DC99E19CD7-seeklogo.com.png" 
+                        alt="logo" 
                         width={500} 
                         height={300} 
                     />
                     <div className="d-flex flex-column align-items-center">
-                        <h1 className="text-primary">Sistema de Saúde </h1>
+                        <h1 className="text-primary">VHRF AGRO </h1>
                         <p className="text-secondary">
                             Preencha os campos para entrar no sistema!
                         </p>
@@ -110,20 +110,21 @@ const Login = () => {
                             </div>
                         </div>
                         <div className="col-md-12 mt-3">
-                            <button
-                                className="btn btn-primary w-100"
-                                type="submit"
-                                id="botao"
-                            >
-                                Entrar
-                            </button>
+                        <button
+                            className="btn w-100"
+                            type="submit"
+                            id="botao"
+                            style={{ backgroundColor: 'green', color: 'yellow', borderColor: 'green' }}
+                        >
+                            Entrar
+                        </button>
                         </div>
                         <div className="col-md-12 mt-3">
                             <button
-                                className="btn btn-outline-primary w-100"
+                                className="btn btn-outline-success w-100"
                                 type="button"
                                 onClick={() => {
-                                    alert ('Entre em contato com a equipe do centro de saude')
+                                    alert ('Entre em contato com a equipe do Sistema')
                                 }}
                             >
                                 Esqueci a Senha

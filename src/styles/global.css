@@ -3,6 +3,11 @@ body {
     
 }
 
+header,footer{
+background: rgb(0,21,152);
+background: radial-gradient(circle, rgba(0,21,152,1) 17%, rgba(242,227,0,1) 47%, rgba(10,105,22,1) 87%);
+}
+
 /* dontpad.com/profchines */
 
 .feather {
