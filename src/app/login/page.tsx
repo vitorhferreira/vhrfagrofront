@@ -48,6 +48,7 @@ const Login = () => {
 
     return (
         <>
+        <link rel="icon" href="https://cdn-icons-png.freepik.com/256/11849/11849248.png?semt=ais_hybrid" /> 
             <Loading loading={loading} />
             <Toast
                 show={toast}

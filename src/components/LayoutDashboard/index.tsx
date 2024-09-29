@@ -22,6 +22,7 @@ export const LayoutDashboard = (props: IProps) => {
     
     return (
         <>
+            <link rel="icon" href="https://cdn-icons-png.freepik.com/256/11849/11849248.png?semt=ais_hybrid" />        
             <header className="navbar navbar-dark sticky-top bg-primary flex-md-nowrap p-0">
                 <a className="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="/dashboard">
                     <span className="fs-4 fw-bold">VHRF AGRO</span>
