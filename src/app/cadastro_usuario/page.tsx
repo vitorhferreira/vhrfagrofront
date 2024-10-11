@@ -1,115 +1,152 @@
 // src/app/cadastro/page.tsx
 'use client'
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Corrigindo importação para useRouter
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import { LayoutDashboard } from '@/components/LayoutDashboard';
 import { toast } from 'react-toastify';
+import { useForm } from 'react-hook-form';
+import 'bootstrap-icons/font/bootstrap-icons.css'; // Importar ícones do Bootstrap
 
-const Cadastro = () => {
-    const router = useRouter();
-    // const [toast, setToast] = useState(false);
-    const [nome, setNome] = useState<string>('');
-    const [cpf, setCpf] = useState<number | string>(''); // CPF agora é do tipo número ou string
-    const [senha, setSenha] = useState<string>('');
-    const [cadastrado, setCadastrado] = useState<boolean>(false); // Estado para controlar exibição da mensagem de cadastro
+// Interface para os dados do usuário
+interface Usuario {
+  nome: string;
+  cpf: string;
+  email: string; // Novo campo de e-mail
+  senha: string;
+  confirmarSenha: string;
+}
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        console.log('Formulário enviado:', { nome, cpf, senha });
-    
-        // Exemplo de requisição usando axios para enviar os dados para a API
-        try {
-            const response = await axios.post('http://127.0.0.1:8000/api/caduser', {
-                nome,
-                cpf,
-                senha
-            });
-            if(parseInt(response.data.sucesso) == 99){
-                toast.warning('CPF invalido');
-                return
-            }
-          
-            toast.success('Usuario cadastrado com sucesso!');
-            setCadastrado(true); // Define o estado para exibir mensagem de cadastro
-            // Limpa os campos após o cadastro
-            setNome('');
-            setCpf('');
-            setSenha('');
-            setTimeout(() => {
-                setCadastrado(false); // Após 3 segundos, esconde a mensagem de cadastro
-                router.push('/cadastro'); // Redireciona para a página de login após o cadastro
-            }, 3000);
-        } catch (error) {
-           
-            toast.error('erro ao cadastrar usuario!');;
-            // Tratamento de erro, exibição de mensagem, etc.
-        }
-    };
+const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void }) => {
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<Usuario>();
+  const [loading, setLoading] = useState(false);
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [confirmarSenhaVisivel, setConfirmarSenhaVisivel] = useState(false);
+  const senha = watch('senha'); // Obter valor do campo "senha"
 
-    const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.replace(/\D/g, ''); // Remove caracteres não numéricos
-        if (value.length <= 11) { // Limita o tamanho do CPF para 11 dígitos
-            setCpf(value);
-        }
-    };
+  const senhaValida = (senha: string) => {
+    // Verifica se a senha atende aos critérios: maiúsculas, números e caracteres especiais
+    const regex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/;
+    return regex.test(senha);
+  };
 
-    return (
-        <div className="container mt-5">
-            <div className="card">
-                <div className="card-body">
-                    <h2 className="text-primary">Cadastro de Usuário</h2>
-                    <form onSubmit={handleSubmit}>
-                        <div className="mb-3">
-                            <label htmlFor="nome" className="form-label">Nome</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                id="nome"
-                                value={nome}
-                                onChange={(e) => setNome(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label htmlFor="cpf" className="form-label">CPF</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                id="cpf"
-                                value={cpf}
-                                onChange={handleCpfChange} // Usa a função de mudança de CPF personalizada
-                                maxLength={11} // Limita o campo de CPF a 11 caracteres visíveis
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label htmlFor="senha" className="form-label">Senha</label>
-                            <input
-                                type="password"
-                                className="form-control"
-                                id="senha"
-                                value={senha}
-                                onChange={(e) => setSenha(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="d-flex justify-content-between">
-                            <div>
-                                <button type="submit" className="btn btn-primary me-2">Cadastrar</button>
-                                <a className="btn btn-secondary" href="/login">Voltar</a>
-                            </div>
-                            
-                        </div>
-                    </form>
-                    {cadastrado && (
-                        <div className="alert alert-success mt-3" role="alert">
-                            Usuário cadastrado com sucesso! 
-                        </div>
-                    )}
-                </div>
-            </div>
+  const onSubmit = async (data: Usuario) => {
+    setLoading(true);
+    try {
+      // Remover a confirmação de senha dos dados enviados ao servidor
+      const { confirmarSenha, ...userData } = data;
+
+      const response = await axios.post('http://127.0.0.1:8000/api/caduser', userData);
+      
+      if (parseInt(response.data.sucesso) === 99) {
+        toast.warning('CPF inválido');
+        return;
+      }
+
+      toast.success('Usuário cadastrado com sucesso!');
+      onUsuarioCadastrado();
+      reset(); // Limpa o formulário
+    } catch (error) {
+      console.error('Erro ao cadastrar usuário:', error);
+      toast.error('Erro ao cadastrar usuário. Verifique os campos e tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
+      <div className="mb-3">
+        <label htmlFor="nome" className="form-label">Nome</label>
+        <input type="text" className="form-control" id="nome" {...register('nome', { required: 'Nome é obrigatório' })} />
+        {errors.nome && <span className="text-danger">{errors.nome.message}</span>}
+      </div>
+
+      <div className="mb-3">
+        <label htmlFor="cpf" className="form-label">CPF</label>
+        <input type="text" className="form-control" id="cpf" {...register('cpf', { required: 'CPF é obrigatório' })} />
+        {errors.cpf && <span className="text-danger">{errors.cpf.message}</span>}
+      </div>
+
+      {/* Novo campo de email */}
+      <div className="mb-3">
+        <label htmlFor="email" className="form-label">E-mail</label>
+        <input type="email" className="form-control" id="email" {...register('email', { required: 'E-mail é obrigatório' })} />
+        {errors.email && <span className="text-danger">{errors.email.message}</span>}
+      </div>
+
+      <div className="mb-3">
+        <label htmlFor="senha" className="form-label">Senha</label>
+        <div className="input-group">
+          <input
+            type={senhaVisivel ? 'text' : 'password'}
+            className="form-control"
+            id="senha"
+            {...register('senha', {
+              required: 'Senha é obrigatória',
+              validate: {
+                validPassword: value =>
+                  senhaValida(value) || 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.'
+              }
+            })}
+          />
+          <span className="input-group-text" style={{ cursor: 'pointer' }} onClick={() => setSenhaVisivel(!senhaVisivel)}>
+            <i className={`bi ${senhaVisivel ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+          </span>
         </div>
-    );
+        {errors.senha && <span className="text-danger">{errors.senha.message}</span>}
+      </div>
+
+      <div className="mb-3">
+        <label htmlFor="confirmarSenha" className="form-label">Confirmar Senha</label>
+        <div className="input-group">
+          <input
+            type={confirmarSenhaVisivel ? 'text' : 'password'}
+            className="form-control"
+            id="confirmarSenha"
+            {...register('confirmarSenha', {
+              required: 'Confirmação de senha é obrigatória',
+              validate: (value) => value === senha || 'As senhas não correspondem'
+            })}
+          />
+          <span className="input-group-text" style={{ cursor: 'pointer' }} onClick={() => setConfirmarSenhaVisivel(!confirmarSenhaVisivel)}>
+            <i className={`bi ${confirmarSenhaVisivel ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+          </span>
+        </div>
+        {errors.confirmarSenha && <span className="text-danger">{errors.confirmarSenha.message}</span>}
+      </div>
+
+      <div className="d-flex justify-content-end">
+        <a className="btn btn-secondary mx-2" href="/listausuario">Voltar</a>
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Salvando...' : 'Cadastrar'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+// Componente principal Cadastro
+const Cadastro = () => {
+  const router = useRouter();
+
+  const handleUsuarioCadastrado = () => {
+    // Lógica após o cadastro do usuário, se necessário
+    router.push('/login'); // Redireciona para a página de login após o cadastro
+  };
+
+  return (
+    <LayoutDashboard token=''>
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="card w-50 shadow">
+          <div className="card-body p-5">
+            <h2 className="text-primary text-center mb-4">Cadastro de Usuário</h2>
+            <CadastroForm onUsuarioCadastrado={handleUsuarioCadastrado} />
+          </div>
+        </div>
+      </div>
+    </LayoutDashboard>
+  );
 };
 
 export default Cadastro;

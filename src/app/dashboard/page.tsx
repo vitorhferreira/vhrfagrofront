@@ -28,36 +28,39 @@ export default async function Page() {
                     </div>
                 </div>
 
-                {/* Rodapé com redes sociais e endereço */}
+                {/* Rodapé clean */}
                 <main className="col-md-12 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column">
-                    <footer className="bg-primary text-white py-4 mt-auto">
+                    <footer className="py-3 mt-auto" style={{ backgroundColor: '#f8f9fa' }}>
                         <div className="container">
                             <div className="row">
                                 <div className="col-md-6">
-                                    <h3>Redes Sociais:</h3>
-                                    <h4>@VHRF AGRO</h4>
-                                    <ul className="list-unstyled d-flex justify-content-start">
+                                    <h6>Redes Sociais:</h6>
+                                    <ul className="list-unstyled d-flex">
                                         <li className="me-3">
-                                            <a href="#">
-                                                <i className="bi bi-facebook fs-3"></i>
+                                            <a href="#" style={{ color: '#6c757d' }}>
+                                                <i className="bi bi-facebook fs-5"></i>
                                             </a>
                                         </li>
                                         <li className="me-3">
-                                            <a href="#">
-                                                <i className="bi bi-twitter fs-3"></i>
+                                            <a href="#" style={{ color: '#6c757d' }}>
+                                                <i className="bi bi-twitter fs-5"></i>
                                             </a>
                                         </li>
                                         <li className="me-3">
-                                            <a href="#">
-                                                <i className="bi bi-instagram fs-3"></i>
+                                            <a href="#" style={{ color: '#6c757d' }}>
+                                                <i className="bi bi-instagram fs-5"></i>
                                             </a>
                                         </li>
                                     </ul>
                                 </div>
-                                <div className="col-md-6">
-                                    <h3>Endereço:</h3>
-                                    <p>Rua Fictícia, 123 - Umuarama/PR</p>
-                                    <p>CEP: 12345-678 - Telefone: (44) 3456-7890</p>
+                                <div className="col-md-6 text-md-end">
+                                    <h6>Endereço:</h6>
+                                    <p className="mb-0" style={{ fontSize: '0.875rem', color: '#6c757d' }}>
+                                        Rua Fictícia, 123 - Umuarama/PR
+                                    </p>
+                                    <p className="mb-0" style={{ fontSize: '0.875rem', color: '#6c757d' }}>
+                                        CEP: 12345-678 - Telefone: (44) 3456-7890
+                                    </p>
                                 </div>
                             </div>
                         </div>

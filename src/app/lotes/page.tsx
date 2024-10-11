@@ -109,44 +109,71 @@ const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void
 
 // Componente para listar os médicos
 const Listalotes = ({ lotes, onloteEdit, onloteCriada }: { lotes: Lote[], onloteEdit: (lote: Lote) => void, onloteCriada: () => void }) => {
+  const [showModal, setShowModal] = useState(false); // Controla a visibilidade do modal
+  const [loteToDelete, setLoteToDelete] = useState<Lote | null>(null); // Lote a ser excluído
+  const handleDeleteConfirmation = (lote: Lote) => {
+    setLoteToDelete(lote);
+    setShowModal(true); // Exibe o modal de confirmação
+  };
+  const handleDelete = async () => {
+    if (loteToDelete) {
+      try {
+        const response = await axios.delete(`http://127.0.0.1:8000/api/lote/${loteToDelete.id}`);
 
-  const handleDelete = async (id: any) => {
-    try {
-      var response = await axios.delete(`http://127.0.0.1:8000/api/lote/${id}`);
-
-      if (response.data.sucesso = true) {
-        toast.success('lote deletado com sucesso');
-        onloteCriada();
-      }
-      else {
+        if (response.data.sucesso === true) {
+          toast.success('Lote deletado com sucesso');
+          onloteCriada();
+        } else {
+          toast.error('Erro ao deletar lote');
+        }
+      } catch (error) {
         toast.error('Erro ao deletar lote');
-        return
+      } finally {
+        setShowModal(false); // Fecha o modal após a ação
+        setLoteToDelete(null); // Limpa o lote a ser excluído
       }
-    } catch (error) {
-      toast.error('Erro ao deletar lote');
     }
   };
 
   return (
-    <div>
-      <h2>Lista de lotes</h2>
-      <ul>
-        {lotes.map((lote) => (
-          <li key={lote.id}>
-            <strong>Quantidade:</strong> {lote.quantidade}<br />
-            <strong>Peso:</strong> {lote.peso}<br />
-            <strong>Valor Individual:</strong> {lote.valor_individual}<br />
-            <strong>Idade Media:</strong> {lote.idade_media}<br />
-            <strong>Data da Compra:</strong> {lote.data_compra}<br />
-            <strong>Numero do Lote:</strong> {lote.numero_lote}<br />
-            <div className="actions">
-              <button className='btn btn-primary' onClick={() => onloteEdit(lote)}>Editar</button>
-              <button className='btn btn-danger' onClick={() => handleDelete(lote.id)}>Excluir</button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+        <div style={{ padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+          <h2 style={{ textAlign: 'center' }}>Lista de Lotes</h2>
+          <ul style={{ listStyleType: 'none', padding: 0 }}>
+            {lotes.map((lote) => (
+              <li key={lote.id} style={{ margin: '15px 0', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
+                <h3 style={{ margin: '0', color: '#007bff' }}>Número do Lote: {lote.numero_lote}</h3> {/* Destacar o número do lote */}
+                <strong>Quantidade:</strong> {lote.quantidade}<br />
+                <strong>Peso:</strong> {`${lote.peso} Kg`}<br />
+                <strong>Valor Individual:</strong> {`R$ ${Number(lote.valor_individual).toFixed(2).replace('.', ',')}`}<br />
+                <strong>Idade Média:</strong> {lote.idade_media}<br />
+                <strong>Data da Compra:</strong> {new Date(lote.data_compra).toLocaleDateString('pt-BR')}<br />
+                <div className="actions" style={{ marginTop: '10px' }}>
+                  <button className='btn btn-primary' style={{ marginRight: '10px', padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: '#007bff', color: '#fff', cursor: 'pointer' }} onClick={() => onloteEdit(lote)}>Editar</button>
+                  <button className='btn btn-danger' style={{ padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: '#dc3545', color: '#fff', cursor: 'pointer' }} onClick={() => handleDeleteConfirmation(lote)}>Excluir</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {showModal && (
+                  <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }} tabIndex={-1}>
+                    <div className="modal-dialog">
+                      <div className="modal-content">
+                        <div className="modal-header">
+                          <h5 className="modal-title">Confirmar Exclusão</h5>
+                          <button type="button" className="btn-close" onClick={() => setShowModal(false)} />
+                        </div>
+                        <div className="modal-body">
+                          <p>Você tem certeza que deseja excluir o lote <strong>{loteToDelete?.numero_lote}</strong>?</p>
+                        </div>
+                        <div className="modal-footer">
+                          <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
+                          <button type="button" className="btn btn-danger" onClick={handleDelete}>Excluir</button>
+                        </div>
+                      </div>
+                    </div>
+                    </div>
+                  )}
+        </div>
   );
 };
 

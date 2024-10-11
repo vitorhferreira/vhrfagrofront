@@ -1,21 +1,23 @@
-'use client'
+'use client';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import Link from 'next/link';
-import styles from './users.module.css';
-import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
+import { LayoutDashboard } from '@/components/LayoutDashboard';
+import { toast } from 'react-toastify';
 
 interface User {
     id: number;
     nome: string;
     cpf: string;
+    email: string; // Adicionado campo de email
     idade: number;
 }
 
 const Users = () => {
     const [users, setUsers] = useState<User[]>([]);
-    const [deleteAlert, setDeleteAlert] = useState(false); // Estado para controlar o alerta de exclusão
+    const [deleteAlert, setDeleteAlert] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [userIdToDelete, setUserIdToDelete] = useState<number | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -31,71 +33,107 @@ const Users = () => {
         }
     };
 
-    const deleteUser = async (id: any) => {
-        try {
-            await axios.delete(`http://127.0.0.1:8000/api/user/${id}`);
-            
-            toast.success('Usuario deletado com sucesso!');
-            fetchUsers(); // Recarregar a lista de usuários após a exclusão
-            setDeleteAlert(true); // Mostrar o alerta de exclusão
-        } catch (error) {
-            toast.error('Erro ao deletar Usuario!');
+    const deleteUser = async () => {
+        if (userIdToDelete !== null) {
+            try {
+                await axios.delete(`http://127.0.0.1:8000/api/user/${userIdToDelete}`);
+                toast.success('Usuário deletado com sucesso!');
+                fetchUsers();
+                setDeleteAlert(true);
+            } catch (error) {
+                toast.error('Erro ao deletar usuário!');
+            } finally {
+                setShowModal(false);
+                setUserIdToDelete(null); // Reset the userIdToDelete
+            }
         }
     };
 
-    // Efeito para esconder o alerta após alguns segundos
     useEffect(() => {
         let timeout: NodeJS.Timeout;
         if (deleteAlert) {
             timeout = setTimeout(() => {
                 setDeleteAlert(false);
-            }, 3000); // Esconder o alerta após 3 segundos
+            }, 3000);
         }
         return () => clearTimeout(timeout);
     }, [deleteAlert]);
 
     return (
-        <>
-        <div className={styles.container}>
-            {deleteAlert && (
-                <div className="alert alert-success alert-dismissible fade show" role="alert">
-                    Usuário deletado com sucesso!
-                    <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close" onClick={() => setDeleteAlert(false)}></button>
+        <LayoutDashboard token=''>
+            <div className="container-fluid">
+                <div className="row">
+                    <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                        {deleteAlert && (
+                            <div className="alert alert-success alert-dismissible fade show" role="alert">
+                                Usuário deletado com sucesso!
+                                <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close" onClick={() => setDeleteAlert(false)}></button>
+                            </div>
+                        )}
+                        <div className="my-4">
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                <h1 className="text-primary">Lista de Usuários</h1>
+                                <div>
+                                    <a className="btn btn-secondary mx-2" href="/dashboard">Voltar</a>
+                                    <a className="btn btn-primary mx-2" href="/cadastro_usuario">Cadastro</a>
+                                </div>
+                            </div>
+                            <div className="table-responsive">
+                                <table className="table table-striped table-hover table-bordered">
+                                    <thead className="table-dark">
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>CPF</th>
+                                            <th>Email</th> {/* Adicionado o campo de email na tabela */}
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {users.map(user => (
+                                            <tr key={user.id}>
+                                                <td>{user.nome}</td>
+                                                <td>{user.cpf}</td>
+                                                <td>{user.email}</td> {/* Exibindo o email */}
+                                                <td>
+                                                    <button className='btn btn-outline-primary me-2' onClick={() => router.push(`/editaruser?id=${user.id}`)}>
+                                                        Editar
+                                                    </button>
+                                                    <button className='btn btn-outline-danger' onClick={() => {
+                                                        setUserIdToDelete(user.id);
+                                                        setShowModal(true);
+                                                    }}>
+                                                        Excluir
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Modal de Confirmação */}
+                        <div className={`modal fade ${showModal ? 'show' : ''}`} style={{ display: showModal ? 'block' : 'none' }} tabIndex={-1} role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                            <div className="modal-dialog" role="document">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title" id="exampleModalLabel">Confirmar Exclusão</h5>
+                                        <button type="button" className="btn-close" onClick={() => setShowModal(false)} aria-label="Close"></button>
+                                    </div>
+                                    <div className="modal-body">
+                                        Você tem certeza de que deseja excluir este usuário?
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
+                                        <button type="button" className="btn btn-danger" onClick={deleteUser}>Excluir</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
                 </div>
-            )}
-            <a className="btn btn-secondary" href="/dashboard">Voltar</a>
-            <a className="btn btn-primary" href="/cadastro_usuario">Cadastro</a>
-            <h1>Lista de Usuários</h1>
-            <table className={styles.table}>
-                <thead className={styles.thead}>
-                    <tr>
-                        <th className={styles.th}>Nome</th>
-                        <th className={styles.th}>CPF</th>
-                        <th className={styles.th}>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users.map(user => (
-                        <tr key={user.id}>
-                            <td className={styles.td}>{user.nome}</td>
-                            <td className={styles.td}>{user.cpf}</td>
-                            <td className={styles.td}>
-                                <button className='btn btn-primary' onClick={() => router.push(`/editaruser?id=${user.id}`)}>
-                                    Editar
-                                </button>
-                                <button
-                                    className={`${styles.button} ${styles.buttonDelete}`}
-                                    onClick={() => deleteUser(user.id)}
-                                >
-                                    Excluir
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-        </>
+            </div>
+        </LayoutDashboard>
     );
 };
 

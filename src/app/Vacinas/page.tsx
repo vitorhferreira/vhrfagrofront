@@ -4,16 +4,15 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { LayoutDashboard } from '@/components/LayoutDashboard';
-import { verificaTokenExpirado } from '@/services/token';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 
-// Interface para os dados do gasto
+// Interface para os dados da vacina e do lote
 interface vacina {
   id?: number;
   nome_vacina: string;
   data_aplicacao: string;
-  quantidade_cabecas:number;
+  quantidade_cabecas: number;
   numero_lote: string;
 }
 
@@ -29,67 +28,88 @@ interface lote {
 
 // Componente para o formulário de cadastro de vacina
 const CadastrovacinaForm = ({ onvacinaCriada, vacinaEdit }: { onvacinaCriada: () => void, vacinaEdit?: vacina }) => {
-  const { register, handleSubmit, reset, setValue } = useForm<vacina>();
+  const { register, handleSubmit, reset, setValue, watch } = useForm<vacina>();
   const [loading, setLoading] = useState(false);
-  const [pacienteOption, setloteOption] = useState<lote[]>([]);
-  const [selectedlote, setSelectedlote] = useState<string>("");
+  const [loteOption, setLoteOption] = useState<lote[]>([]);
+  const [selectedLote, setSelectedLote] = useState<string>("");
+  const [quantidadeDisponivel, setQuantidadeDisponivel] = useState<number | null>(null);
+  const quantidadeCabecas = watch('quantidade_cabecas'); // Obter o valor do campo de quantidade de cabeças
 
+  // Buscar lotes disponíveis
   useEffect(() => {
-    const fetchnumero_lotes = async () => {
+    const fetchLotes = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/lote');
-        setloteOption(response.data);
+        const response = await axios.get('http://127.0.0.1:8000/api/lote');
+        setLoteOption(response.data);
       } catch (error: any) {
-        toast.error('Erro ao buscar lote');
+        toast.error('Erro ao buscar lotes');
       }
     };
-    fetchnumero_lotes();
+    fetchLotes();
   }, []);
 
+  // Preencher os campos ao editar
   useEffect(() => {
     if (vacinaEdit) {
       setValue('nome_vacina', vacinaEdit.nome_vacina);
       setValue('data_aplicacao', vacinaEdit.data_aplicacao);
       setValue('quantidade_cabecas', vacinaEdit.quantidade_cabecas);
-      setSelectedlote(vacinaEdit.numero_lote);
-      setValue('numero_lote', vacinaEdit.numero_lote); 
+      setSelectedLote(vacinaEdit.numero_lote);
+      setValue('numero_lote', vacinaEdit.numero_lote);
     } else {
-      setSelectedlote("");
       reset();
     }
   }, [vacinaEdit, setValue, reset]);
 
+  // Função para verificar a quantidade disponível ao selecionar um lote
+  const handleLoteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const loteSelecionado = event.target.value;
+    setSelectedLote(loteSelecionado);
+    setValue('numero_lote', loteSelecionado);
+
+    const lote = loteOption.find(l => l.numero_lote === loteSelecionado);
+    if (lote) {
+      setQuantidadeDisponivel(lote.quantidade);
+    } else {
+      setQuantidadeDisponivel(null);
+    }
+  };
+
+  // Função para verificar se a quantidade de cabeças está disponível no lote selecionado
+  const isQuantidadeValida = () => {
+    if (quantidadeDisponivel !== null && quantidadeCabecas !== undefined) {
+      return quantidadeCabecas <= quantidadeDisponivel;
+    }
+    return true; // Se não houver lote selecionado, considerar válido
+  };
 
   // Função para submeter o formulário
   const onSubmit = async (data: vacina) => {
+    if (!isQuantidadeValida()) {
+      toast.error(`A quantidade de cabeças não pode exceder a quantidade disponível no lote (${quantidadeDisponivel}).`);
+      return;
+    }
+
     setLoading(true);
     try {
       if (vacinaEdit) {
-        await axios.put(`http://127.0.0.1:8000/api/vacinas/${vacinaEdit.id}`, data); // URL da API para atualização
+        await axios.put(`http://127.0.0.1:8000/api/vacinas/${vacinaEdit.id}`, data);
         toast.success('Vacina atualizada com sucesso!');
         onvacinaCriada();
       } else {
-        await axios.post('http://127.0.0.1:8000/api/cadvacinas', data); // URL da API a ser utilizada
+        await axios.post('http://127.0.0.1:8000/api/cadvacinas', data);
         toast.success('Vacina cadastrada com sucesso!');
-        onvacinaCriada(); // Atualiza a lista de vacinas após cadastrar
+        onvacinaCriada();
         reset(); // Limpa o formulário
       }
     } catch (error) {
-      console.error('Erro ao cadastrar Vacina:', error);
-      toast.error('Erro ao cadastrar Vacina. Verifique os campos e tente novamente.');
+      console.error('Erro ao cadastrar vacina:', error);
+      toast.error('Erro ao cadastrar vacina. Verifique os campos e tente novamente.');
     } finally {
       setLoading(false);
     }
   };
-  const handleloteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const lote = event.target.value;
-    setSelectedlote(lote);
-    setValue('numero_lote', lote);
-  };
-  useEffect(() => {
-    register('numero_lote', { required: true }); // Registrar o campo data_aplicacao manualmente
-  }, [register]);
-  // Retorno do componente de formulário
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="mb-3">
@@ -102,20 +122,31 @@ const CadastrovacinaForm = ({ onvacinaCriada, vacinaEdit }: { onvacinaCriada: ()
       </div>
       <div className="mb-3">
         <label htmlFor="quantidade_cabecas" className="form-label">Quantidade de Cabeças:</label>
-        <input type="number" className="form-control" id="quantidade_cabecas" {...register('quantidade_cabecas', { required: true })} />
+        <input
+          type="number"
+          className="form-control"
+          id="quantidade_cabecas"
+          {...register('quantidade_cabecas', { required: true })}
+          style={{ borderColor: !isQuantidadeValida() ? 'red' : undefined }}
+        />
+        {!isQuantidadeValida() && (
+          <div className="text-danger">
+            Quantidade excede a quantidade disponível no lote ({quantidadeDisponivel} cabeças disponíveis).
+          </div>
+        )}
       </div>
       <div className="mb-3">
         <label htmlFor="lote" className="form-label">Lote</label>
-         <select className="form-select" name="lote" value={selectedlote} onChange={handleloteChange}>
-          <option value="lote">Selecione um Lote</option>
-          {pacienteOption.map(lote => (
+        <select className="form-select" name="lote" value={selectedLote} onChange={handleLoteChange}>
+          <option value="">Selecione um Lote</option>
+          {loteOption.map(lote => (
             <option key={lote.id} value={lote.numero_lote}>
-              {`${lote.numero_lote}`}
+              {`${lote.numero_lote} - ${lote.quantidade} cabeças disponíveis`}
             </option>
           ))}
         </select>
       </div>
-      <button type="submit" className="btn btn-primary" disabled={loading}>
+      <button type="submit" className="btn btn-primary" disabled={loading || !isQuantidadeValida()}>
         {loading ? 'Salvando...' : 'Salvar'}
       </button>
     </form>
@@ -133,23 +164,34 @@ interface vacina {
 // Componente para listar as vacinas
 const Listavacinas = ({ vacinas, onvacinaEdit, onvacinaCriada }: { vacinas: vacina[], onvacinaEdit: (vacina: vacina) => void, onvacinaCriada: () => void }) => {
   const [filteredvacinas, setFilteredvacinas] = useState<vacina[]>(vacinas);
+  const [showModal, setShowModal] = useState(false); // Controla a visibilidade do modal
+  const [vacinaToDelete, setVacinaToDelete] = useState<vacina | null>(null); // Vacina a ser excluída
+
   useEffect(() => {
     setFilteredvacinas(vacinas)
   }, [vacinas])
-  // Retorno do componente de lista de vacinas
-  const handleDelete = async (id: any) => {
-    try {
-      var response = await axios.delete(`http://127.0.0.1:8000/api/vacinas/${id}`);
-      if (response.data.sucesso = true) {
-        toast.success('Vacina deletada com sucesso');
-        onvacinaCriada();
-      }
-      else {
+
+  const handleDeleteConfirmation = (vacina: vacina) => {
+    setVacinaToDelete(vacina);
+    setShowModal(true); // Exibe o modal de confirmação
+  };
+
+  const handleDelete = async () => {
+    if (vacinaToDelete) {
+      try {
+        var response = await axios.delete(`http://127.0.0.1:8000/api/vacinas/${vacinaToDelete.id}`);
+        if (response.data.sucesso = true) {
+          toast.success('Vacina deletada com sucesso');
+          onvacinaCriada();
+        } else {
+          toast.error('Erro ao deletar Vacina');
+        }
+      } catch (error) {
         toast.error('Erro ao deletar Vacina');
-        return
+      } finally {
+        setShowModal(false); // Fecha o modal após a ação
+        setVacinaToDelete(null); // Limpa a vacina a ser excluída
       }
-    } catch (error) {
-      toast.error('Erro ao deletar Vacina');
     }
   };
 
@@ -167,30 +209,42 @@ const Listavacinas = ({ vacinas, onvacinaEdit, onvacinaCriada }: { vacinas: vaci
       <input placeholder="Filtrar por Numero do lote" className="form-control mb-3" onChange={(e) => filtervacina(e.target.value)} />
       <ul>
         {filteredvacinas.map((vacina) => (
-          <li key={vacina.id}>
+          <li key={vacina.id} style={{ margin: '15px 0', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
+            <h3 style={{ margin: '0', color: '#007bff' }}>Número do Lote: {vacina.numero_lote}</h3> {/* Destacar o número do lote */}
             <strong>Nome da Vacina:</strong> {vacina.nome_vacina}<br />
-            <strong>Data da Aplicação:</strong> {vacina.data_aplicacao}<br />
-            <strong>Quantidade de cabeças:</strong> {vacina.quantidade_cabecas}<br />
-            <strong>Numero do Lote:</strong> {vacina.numero_lote}<br />
-            <div className="actions">
-              <button className='btn btn-primary' onClick={() => onvacinaEdit(vacina)}>Editar</button>
-              <button className='btn btn-danger' onClick={() => handleDelete(vacina.id)}>Excluir</button>
+            <strong>Data da Aplicação:</strong> {new Date(vacina.data_aplicacao).toLocaleDateString('pt-BR')}<br />
+            <strong>Quantidade de Cabeças:</strong> {vacina.quantidade_cabecas}<br />
+            <div className="actions" style={{ marginTop: '10px' }}>
+              <button className='btn btn-primary' style={{ marginRight: '10px', padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: '#007bff', color: '#fff', cursor: 'pointer' }} onClick={() => onvacinaEdit(vacina)}>Editar</button>
+              <button className='btn btn-danger' style={{ padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: '#dc3545', color: '#fff', cursor: 'pointer' }} onClick={() => handleDeleteConfirmation(vacina)}>Excluir</button>
             </div>
           </li>
-
         ))}
       </ul>
+
+      {/* Modal de Confirmação de Exclusão */}
+      {showModal && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }} tabIndex={-1}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Confirmar Exclusão</h5>
+                <button type="button" className="btn-close" onClick={() => setShowModal(false)} />
+              </div>
+              <div className="modal-body">
+                <p>Você tem certeza que deseja excluir a vacina <strong>{vacinaToDelete?.nome_vacina}</strong>?</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button type="button" className="btn btn-danger" onClick={handleDelete}>Excluir</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-interface vacina {
-  id?: number;
-  nome_vacina: string;
-  data_aplicacao: string;
-  quantidade_cabecas:number;
-  numero_lote: string;
-}
-
 
 // Componente principal Dashboard
 const Dashboard = () => {
