@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 
 // Interface para os dados do consumo de ração
-interface consumoRacao {
+interface ConsumoRacao {
   id?: number;
   tipo_racao: string;
   quantidade_kg: string;
@@ -27,8 +27,8 @@ interface Lote {
 }
 
 // Componente para o formulário de cadastro de consumo de ração
-const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { onConsumoRacaoCriada: () => void, consumoRacaoEdit?: consumoRacao }) => {
-  const { register, handleSubmit, reset, setValue, watch } = useForm<consumoRacao>();
+const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { onConsumoRacaoCriada: () => void, consumoRacaoEdit?: ConsumoRacao }) => {
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ConsumoRacao>();
   const [loading, setLoading] = useState(false);
   const [loteOption, setLoteOption] = useState<Lote[]>([]);
   const [selectedLote, setSelectedLote] = useState<string>("");
@@ -58,11 +58,8 @@ const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { 
     }
   }, [consumoRacaoEdit, setValue, reset]);
 
-  // Função para verificar a quantidade disponível ao selecionar um lote
-
-
   // Função para submeter o formulário
-  const onSubmit = async (data: consumoRacao) => {
+  const onSubmit = async (data: ConsumoRacao) => {
     setLoading(true);
     try {
       if (consumoRacaoEdit) {
@@ -87,23 +84,59 @@ const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { 
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="mb-3">
         <label htmlFor="tipo_racao" className="form-label">Tipo de Ração:</label>
-        <input type="text" className="form-control" id="tipo_racao" {...register('tipo_racao', { required: true })} />
+        <input 
+          type="text" 
+          className="form-control" 
+          id="tipo_racao" 
+          {...register('tipo_racao', { required: 'O tipo de ração é obrigatório' })}
+        />
+        {errors.tipo_racao && <div className="text-danger">{errors.tipo_racao.message}</div>}
       </div>
       <div className="mb-3">
         <label htmlFor="quantidade_kg" className="form-label">Quantidade (Kg):</label>
-        <input type="number" className="form-control" id="quantidade_kg" {...register('quantidade_kg', { required: true })} />
+        <input 
+          type="number" 
+          className="form-control" 
+          id="quantidade_kg" 
+          {...register('quantidade_kg', { 
+            required: 'A quantidade é obrigatória',
+            min: { value: 1, message: 'A quantidade deve ser maior que 0' }
+          })} 
+        />
+        {errors.quantidade_kg && <div className="text-danger">{errors.quantidade_kg.message}</div>}
       </div>
       <div className="mb-3">
         <label htmlFor="valor_estimado" className="form-label">Valor Estimado:</label>
-        <input type="number" className="form-control" id="valor_estimado" {...register('valor_estimado', { required: true })} />
+        <input 
+          type="number" 
+          className="form-control" 
+          id="valor_estimado" 
+          {...register('valor_estimado', { 
+            required: 'O valor estimado é obrigatório',
+            min: { value: 1, message: 'O valor estimado deve ser maior que 0' }
+          })} 
+        />
+        {errors.valor_estimado && <div className="text-danger">{errors.valor_estimado.message}</div>}
       </div>
       <div className="mb-3">
         <label htmlFor="data_inicial" className="form-label">Data Inicial:</label>
-        <input type="date" className="form-control" id="data_inicial" {...register('data_inicial', { required: true })} />
+        <input 
+          type="date" 
+          className="form-control" 
+          id="data_inicial" 
+          {...register('data_inicial', { required: 'A data inicial é obrigatória' })}
+        />
+        {errors.data_inicial && <div className="text-danger">{errors.data_inicial.message}</div>}
       </div>
       <div className="mb-3">
         <label htmlFor="data_final" className="form-label">Data Final:</label>
-        <input type="date" className="form-control" id="data_final" {...register('data_final', { required: true })} />
+        <input 
+          type="date" 
+          className="form-control" 
+          id="data_final" 
+          {...register('data_final', { required: 'A data final é obrigatória' })}
+        />
+        {errors.data_final && <div className="text-danger">{errors.data_final.message}</div>}
       </div>
       <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? 'Salvando...' : 'Salvar'}
@@ -113,16 +146,16 @@ const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { 
 };
 
 // Componente para listar os consumos de ração
-const ListaConsumoRacao = ({ consumosRacao, onConsumoRacaoEdit, onConsumoRacaoCriada }: { consumosRacao: consumoRacao[], onConsumoRacaoEdit: (consumoRacao: consumoRacao) => void, onConsumoRacaoCriada: () => void }) => {
-  const [filteredConsumosRacao, setFilteredConsumosRacao] = useState<consumoRacao[]>(consumosRacao);
+const ListaConsumoRacao = ({ consumosRacao, onConsumoRacaoEdit, onConsumoRacaoCriada }: { consumosRacao: ConsumoRacao[], onConsumoRacaoEdit: (consumoRacao: ConsumoRacao) => void, onConsumoRacaoCriada: () => void }) => {
+  const [filteredConsumosRacao, setFilteredConsumosRacao] = useState<ConsumoRacao[]>(consumosRacao);
   const [showModal, setShowModal] = useState(false); // Controla a visibilidade do modal
-  const [consumoRacaoToDelete, setConsumoRacaoToDelete] = useState<consumoRacao | null>(null); // Controla o consumo de ração a ser excluído
+  const [consumoRacaoToDelete, setConsumoRacaoToDelete] = useState<ConsumoRacao | null>(null); // Controla o consumo de ração a ser excluído
 
   useEffect(() => {
-    setFilteredConsumosRacao(consumosRacao)
-  }, [consumosRacao])
+    setFilteredConsumosRacao(consumosRacao);
+  }, [consumosRacao]);
 
-  const handleDeleteConfirmation = (consumoRacao: consumoRacao) => {
+  const handleDeleteConfirmation = (consumoRacao: ConsumoRacao) => {
     setConsumoRacaoToDelete(consumoRacao);
     setShowModal(true); // Exibe o modal de confirmação
   };
@@ -130,7 +163,7 @@ const ListaConsumoRacao = ({ consumosRacao, onConsumoRacaoEdit, onConsumoRacaoCr
   const handleDelete = async () => {
     if (consumoRacaoToDelete) {
       try {
-        var response = await axios.delete(`http://127.0.0.1:8000/api/consumo_racao/${consumoRacaoToDelete.id}`);
+        const response = await axios.delete(`http://127.0.0.1:8000/api/consumo_racao/${consumoRacaoToDelete.id}`);
         if (response.data.sucesso === true) {
           toast.success('Consumo de ração deletado com sucesso');
           onConsumoRacaoCriada();
@@ -145,14 +178,6 @@ const ListaConsumoRacao = ({ consumosRacao, onConsumoRacaoEdit, onConsumoRacaoCr
       }
     }
   };
-
-  const filterConsumoRacao = (lote: string) => {
-    if (lote !== '') {
-      setFilteredConsumosRacao(consumosRacao.filter(d => d.lote.includes(lote)))
-    } else {
-      setFilteredConsumosRacao(consumosRacao)
-    }
-  }
 
   return (
     <div>
@@ -183,7 +208,7 @@ const ListaConsumoRacao = ({ consumosRacao, onConsumoRacaoEdit, onConsumoRacaoCr
                 <button type="button" className="btn-close" onClick={() => setShowModal(false)} />
               </div>
               <div className="modal-body">
-                <p>Você tem certeza que deseja excluir o consumo de ração <strong>{consumoRacaoToDelete?.lote}</strong>?</p>
+                <p>Você tem certeza que deseja excluir o consumo de ração <strong>{consumoRacaoToDelete?.tipo_racao}</strong>?</p>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
@@ -200,8 +225,8 @@ const ListaConsumoRacao = ({ consumosRacao, onConsumoRacaoEdit, onConsumoRacaoCr
 // Componente principal Dashboard
 const Dashboard = () => {
   const router = useRouter();
-  const [consumosRacao, setConsumosRacao] = useState<consumoRacao[]>([]);
-  const [consumoRacaoEdit, setConsumoRacaoEdit] = useState<consumoRacao | null>(null);
+  const [consumosRacao, setConsumosRacao] = useState<ConsumoRacao[]>([]);
+  const [consumoRacaoEdit, setConsumoRacaoEdit] = useState<ConsumoRacao | null>(null);
 
   // Verificação de token (exemplo básico)
   useEffect(() => {
@@ -221,7 +246,7 @@ const Dashboard = () => {
     carregarConsumosRacao();
     setConsumoRacaoEdit(null); // Limpar o consumo de ração em edição após criar/editar
   };
-  const handleConsumoRacaoEdit = (consumoRacao: consumoRacao) => {
+  const handleConsumoRacaoEdit = (consumoRacao: ConsumoRacao) => {
     setConsumoRacaoEdit(consumoRacao);
   };
 
@@ -256,4 +281,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; // Exporta o componente Dashboard
+export default Dashboard;

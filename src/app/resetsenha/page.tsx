@@ -72,7 +72,7 @@ const RedefinirSenha = () => {
         {/* Centralizar a imagem */}
         <div className="d-flex justify-content-center mb-4">
           <img
-            src="https://files.oaiusercontent.com/file-Wz0TWbICarA3cOjk8Cxb0xaq?se=2024-10-05T18%3A40%3A23Z&sp=r&sv=2024-08-04&sr=b&rscc=max-age%3D604800%2C%20immutable%2C%20private&rscd=attachment%3B%20filename%3D510e4a3a-8079-4aec-b60b-61d9314e0d1c.webp&sig=DBBM7F4LOWJKRMEn95usiyC0JcrhcdJbBp9xiJO8bco%3D"
+            src="/logotcc.jpeg"
             alt="logo"
             style={{ width: '80px', height: 'auto' }}
           />

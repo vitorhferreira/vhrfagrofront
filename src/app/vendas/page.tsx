@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ interface Venda {
   quantidade_vendida: string;
   prazo_pagamento: string;
   data_compra: string;
+  recebido: boolean; // Adicionado para controlar o status de recebimento
 }
 
 interface Lote {
@@ -33,8 +34,12 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
   const [loteOption, setLoteOption] = useState<Lote[]>([]);
   const [selectedLote, setSelectedLote] = useState<string>('');
   const [quantidadeDisponivel, setQuantidadeDisponivel] = useState<number | null>(null);
-  const quantidadeVendida = watch('quantidade_vendida'); // Obter o valor da quantidade vendida
+  const quantidadeVendida = watch('quantidade_vendida');
+  const valorUnitario = watch('valor_unitario');
+  const pesoMedioVenda = watch('peso_medio_venda');
+  const prazoPagamento = watch('prazo_pagamento');
 
+  // Carregar os lotes ao montar o componente
   useEffect(() => {
     const fetchLotes = async () => {
       try {
@@ -57,13 +62,12 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
       setValue('quantidade_vendida', vendaEdit.quantidade_vendida);
       setValue('prazo_pagamento', vendaEdit.prazo_pagamento);
       setValue('data_compra', vendaEdit.data_compra);
-      handleLoteChange({ target: { value: vendaEdit.numero_lote } } as any); // Atualizar o lote selecionado
+      handleLoteChange({ target: { value: vendaEdit.numero_lote } } as any);
     } else {
       reset();
     }
   }, [vendaEdit, setValue, reset]);
 
-  // Função para verificar a quantidade disponível ao selecionar um lote
   const handleLoteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const loteSelecionado = event.target.value;
     setSelectedLote(loteSelecionado);
@@ -77,18 +81,25 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
     }
   };
 
-  // Função para verificar se a quantidade vendida está disponível no lote selecionado
   const isQuantidadeValida = () => {
     if (quantidadeDisponivel !== null && quantidadeVendida !== undefined) {
-      return Number(quantidadeVendida) <= quantidadeDisponivel;
+      return Number(quantidadeVendida) > 0 && Number(quantidadeVendida) <= quantidadeDisponivel;
     }
-    return true; // Se não houver lote selecionado, considerar válido
+    return true;
   };
 
-  // Função para submeter o formulário
+  const isValorValido = () => {
+    return Number(valorUnitario) > 0 && Number(pesoMedioVenda) > 0 && Number(prazoPagamento) > 0;
+  };
+
   const onSubmit = async (data: Venda) => {
     if (!isQuantidadeValida()) {
       toast.error(`A quantidade vendida não pode exceder a quantidade disponível no lote (${quantidadeDisponivel}).`);
+      return;
+    }
+
+    if (!isValorValido()) {
+      toast.error(`O valor, peso ou prazo de pagamento devem ser maiores que zero.`);
       return;
     }
 
@@ -105,16 +116,27 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
         lote_id,
       };
 
+      // Cadastra a venda
       if (vendaEdit) {
         await axios.put(`http://127.0.0.1:8000/api/vendas/${vendaEdit.id}`, vendaData);
         toast.success('Venda atualizada com sucesso!');
-        onVendaCriada();
       } else {
         await axios.post('http://127.0.0.1:8000/api/vendas', vendaData);
         toast.success('Venda cadastrada com sucesso!');
-        onVendaCriada(); // Atualiza a lista após cadastrar
-        reset(); // Limpa o formulário
       }
+
+      // Atualiza a quantidade de lotes após a venda
+      const novaQuantidade = quantidadeDisponivel! - Number(data.quantidade_vendida);
+      
+      if (novaQuantidade >= 0) {
+        await axios.put(`http://127.0.0.1:8000/api/lotes/${lote_id}/quantidade`, { quantidade: novaQuantidade });
+        toast.info('Lote atualizado com sucesso!');
+      } else {
+        toast.error('Erro ao atualizar a quantidade do lote.');
+      }
+
+      onVendaCriada();
+      reset();
     } catch (error) {
       console.error('Erro ao cadastrar venda:', error);
       toast.error('Erro ao cadastrar venda. Verifique os campos e tente novamente.');
@@ -138,7 +160,15 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
       </div>
       <div className="mb-3">
         <label htmlFor="peso_medio_venda" className="form-label">Peso Médio de Venda (Kg):</label>
-        <input type="number" className="form-control" id="peso_medio_venda" {...register('peso_medio_venda', { required: true })} />
+        <input 
+          type="number" 
+          className="form-control" 
+          id="peso_medio_venda" 
+          {...register('peso_medio_venda', { required: true, min: 1 })} 
+        />
+        {pesoMedioVenda <= 0 && (
+          <div className="text-danger">Peso deve ser maior que 0.</div>
+        )}
       </div>
       <div className="mb-3">
         <label htmlFor="comprador" className="form-label">Comprador:</label>
@@ -150,7 +180,15 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
       </div>
       <div className="mb-3">
         <label htmlFor="valor_unitario" className="form-label">Valor Unitário (R$):</label>
-        <input type="number" className="form-control" id="valor_unitario" {...register('valor_unitario', { required: true })} />
+        <input 
+          type="number" 
+          className="form-control" 
+          id="valor_unitario" 
+          {...register('valor_unitario', { required: true, min: 1 })} 
+        />
+        {valorUnitario <= 0 && (
+          <div className="text-danger">Valor deve ser maior que 0.</div>
+        )}
       </div>
       <div className="mb-3">
         <label htmlFor="quantidade_vendida" className="form-label">Quantidade Vendida:</label>
@@ -158,7 +196,7 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
           type="number"
           className="form-control"
           id="quantidade_vendida"
-          {...register('quantidade_vendida', { required: true })}
+          {...register('quantidade_vendida', { required: true, min: 1 })}
           style={{ borderColor: !isQuantidadeValida() ? 'red' : undefined }}
         />
         {!isQuantidadeValida() && (
@@ -168,91 +206,140 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
         )}
       </div>
       <div className="mb-3">
-        <label htmlFor="prazo_pagamento" className="form-label">Prazo de Pagamento:</label>
-        <input type="text" className="form-control" id="prazo_pagamento" {...register('prazo_pagamento')} />
+        <label htmlFor="prazo_pagamento" className="form-label">Prazo de Pagamento (dias):</label>
+        <input 
+          type="number" 
+          className="form-control" 
+          id="prazo_pagamento" 
+          {...register('prazo_pagamento', { required: true, min: 1 })} 
+        />
+        {prazoPagamento <= 0 && (
+          <div className="text-danger">Prazo de pagamento deve ser maior que 0.</div>
+        )}
       </div>
       <div className="mb-3">
         <label htmlFor="data_compra" className="form-label">Data da Compra:</label>
         <input type="date" className="form-control" id="data_compra" {...register('data_compra', { required: true })} />
       </div>
-      <button type="submit" className="btn btn-primary" disabled={loading || !isQuantidadeValida()}>
+      <button type="submit" className="btn btn-primary" disabled={loading || !isQuantidadeValida() || !isValorValido()}>
         {loading ? 'Salvando...' : 'Salvar'}
       </button>
     </form>
   );
 };
 
+// Função para verificar se a venda está em atraso
+const verificarAtraso = (dataCompra: string, prazoPagamento: string) => {
+  const dataCompraDate = new Date(dataCompra);
+  const prazoDias = Number(prazoPagamento);
+  const dataLimite = new Date(dataCompraDate);
+  dataLimite.setDate(dataLimite.getDate() + prazoDias);
+
+  return dataLimite < new Date(); // Retorna true se a data limite for menor que a data atual (atraso)
+};
+
 // Componente para listar as vendas
 const ListaVendas = ({ vendas, onVendaEdit, onVendaCriada }: { vendas: Venda[], onVendaEdit: (venda: Venda) => void, onVendaCriada: () => void }) => {
-  const [showModal, setShowModal] = useState(false);
-  const [vendaToDelete, setVendaToDelete] = useState<Venda | null>(null);
-
-  // Função para abrir o modal de confirmação
-  const handleDeleteConfirmation = (venda: Venda) => {
-    setVendaToDelete(venda);
-    setShowModal(true);
-  };
-
-  // Função para excluir a venda
-  const handleDelete = async () => {
-    if (vendaToDelete) {
-      try {
-        await axios.delete(`http://127.0.0.1:8000/api/vendas/${vendaToDelete.id}`);
-        toast.success('Venda excluída com sucesso');
-        onVendaCriada(); // Atualiza a lista após excluir
-      } catch (error) {
-        toast.error('Erro ao excluir venda');
-      } finally {
-        setShowModal(false); // Fecha o modal
+    const [showModal, setShowModal] = useState(false);
+    const [vendaToDelete, setVendaToDelete] = useState<Venda | null>(null);
+  
+    const handleDeleteConfirmation = (venda: Venda) => {
+      setVendaToDelete(venda);
+      setShowModal(true);
+    };
+  
+    const handleDelete = async () => {
+      if (vendaToDelete) {
+        try {
+          await axios.delete(`http://127.0.0.1:8000/api/vendas/${vendaToDelete.id}`);
+          toast.success('Venda excluída com sucesso.');
+          onVendaCriada();
+        } catch (error) {
+          toast.error('Erro ao excluir venda.');
+        } finally {
+          setShowModal(false);
+        }
       }
-    }
-  };
+    };
+  
+    const toggleRecebido = async (venda: Venda) => {
+      try {
+        const url = venda.recebido
+          ? `http://127.0.0.1:8000/api/vendas/${venda.id}/naorecebido`
+          : `http://127.0.0.1:8000/api/vendas/${venda.id}/recebido`;
+  
+        const response = await axios.put(url);
+        if (response.data.sucesso) {
+          toast.success('Status de recebimento atualizado com sucesso');
+          onVendaCriada();
+        } else {
+          toast.error('Erro ao atualizar status de recebimento');
+        }
+      } catch (error) {
+        toast.error('Erro ao atualizar status de recebimento');
+      }
+    };
+  
+    return (
+      <div>
+        <h2>Lista de Vendas:</h2>
+        <ul>
+          {vendas.map((venda) => {
+            const emAtraso = verificarAtraso(venda.data_compra, venda.prazo_pagamento) && !venda.recebido;
 
-  return (
-    <div>
-      <h2>Lista de Vendas:</h2>
-      <ul>
-        {vendas.map((venda) => (
-          <li key={venda.id} style={{ margin: '15px 0', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
-            <h3 style={{ margin: '0', color: '#007bff' }}>Lote: {venda.numero_lote}</h3>
-            <strong>Peso Médio de Venda (Kg):</strong> {venda.peso_medio_venda}<br />
-            <strong>Comprador:</strong> {venda.comprador}<br />
-            <strong>CPF/CNPJ:</strong> {venda.cpf_cnpj_comprador}<br />
-            <strong>Valor Unitário:</strong> {`R$ ${Number(venda.valor_unitario).toFixed(2).replace('.', ',')}`}<br />
-            <strong>Quantidade Vendida:</strong> {venda.quantidade_vendida}<br />
-            <strong>Prazo de Pagamento:</strong> {venda.prazo_pagamento}<br />
-            <strong>Data da Compra:</strong> {new Date(venda.data_compra).toLocaleDateString('pt-BR')}<br />
-            <div className="actions" style={{ marginTop: '10px' }}>
-              <button className='btn btn-primary' style={{ marginRight: '10px' }} onClick={() => onVendaEdit(venda)}>Editar</button>
-              <button className='btn btn-danger' onClick={() => handleDeleteConfirmation(venda)}>Excluir</button>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      {/* Modal de Confirmação de Exclusão */}
-      {showModal && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }} tabIndex={-1}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirmar Exclusão</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)} />
-              </div>
-              <div className="modal-body">
-                <p>Você tem certeza que deseja excluir a venda do lote <strong>{vendaToDelete?.numero_lote}</strong>?</p>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
-                <button type="button" className="btn btn-danger" onClick={handleDelete}>Excluir</button>
+            return (
+              <li
+                key={venda.id}
+                style={{
+                  margin: '15px 0',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  backgroundColor: venda.recebido ? '#d4edda' : emAtraso ? '#f8d7da' : '#fff', // Verde se recebido, vermelho se em atraso
+                }}
+              >
+                <h3 style={{ margin: '0', color: '#007bff' }}>Lote: {venda.numero_lote}</h3>
+                <strong>Peso Médio de Venda (Kg):</strong> {venda.peso_medio_venda}<br />
+                <strong>Comprador:</strong> {venda.comprador}<br />
+                <strong>CPF/CNPJ:</strong> {venda.cpf_cnpj_comprador}<br />
+                <strong>Valor Unitário:</strong> {`R$ ${Number(venda.valor_unitario).toFixed(2).replace('.', ',')}`}<br />
+                <strong>Quantidade Vendida:</strong> {venda.quantidade_vendida}<br />
+                <strong>Prazo de Pagamento:</strong> {venda.prazo_pagamento} dias<br />
+                <strong>Data da Compra:</strong> {new Date(venda.data_compra).toLocaleDateString('pt-BR')}<br />
+                <strong>Status de Recebimento:</strong> {venda.recebido ? 'Recebido' : emAtraso ? 'Em Atraso' : 'Não Recebido'}<br />
+                <div className="actions" style={{ marginTop: '10px' }}>
+                  <button className='btn btn-danger' style={{ marginRight: '10px' }} onClick={() => handleDeleteConfirmation(venda)}>Excluir</button>
+                  <button className='btn btn-secondary' onClick={() => toggleRecebido(venda)}>
+                    {venda.recebido ? 'Marcar como Não Recebido' : 'Marcar como Recebido'}
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+  
+        {showModal && (
+          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }} tabIndex={-1}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Confirmar Exclusão</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)} />
+                </div>
+                <div className="modal-body">
+                  <p>Você tem certeza que deseja excluir a venda do lote <strong>{vendaToDelete?.numero_lote}</strong>?</p>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
+                  <button type="button" className="btn btn-danger" onClick={handleDelete}>Excluir</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  };
 
 // Componente principal Dashboard
 const Dashboard = () => {
@@ -260,7 +347,6 @@ const Dashboard = () => {
   const [vendas, setVendas] = useState<Venda[]>([]);
   const [vendaEdit, setVendaEdit] = useState<Venda | null>(null);
 
-  // Carregar vendas
   useEffect(() => {
     carregarVendas();
   }, []);
@@ -276,14 +362,13 @@ const Dashboard = () => {
 
   const handleVendaCriada = () => {
     carregarVendas();
-    setVendaEdit(null); // Limpar o estado de edição após criar/editar
+    setVendaEdit(null);
   };
 
   const handleVendaEdit = (venda: Venda) => {
     setVendaEdit(venda);
   };
 
-  // Retorno do componente Dashboard
   return (
     <LayoutDashboard token=''>
       <div className="container-fluid">
@@ -292,14 +377,12 @@ const Dashboard = () => {
             <div className="my-4">
               <h2 className="mb-4">Cadastro de Vendas</h2>
 
-              {/* Componente de Formulário de Cadastro */}
               <div className="card mb-4">
                 <div className="card-body">
                   <CadastroVendaForm onVendaCriada={handleVendaCriada} vendaEdit={vendaEdit} />
                 </div>
               </div>
 
-              {/* Componente de Lista de Vendas */}
               <div className="card mb-4">
                 <div className="card-body">
                   <ListaVendas onVendaEdit={handleVendaEdit} onVendaCriada={handleVendaCriada} vendas={vendas} />

@@ -16,14 +16,25 @@ interface Lote {
   idade_media: string;
   data_compra: string;
   numero_lote: number;
-
 }
 
-// Componente para o formulário de cadastro de lotes
 const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void, loteEdit?: Lote }) => {
-  const { register, handleSubmit, reset, setValue } = useForm<Lote>();
+  const { register, handleSubmit, reset, setValue, watch } = useForm<Lote>();
   const [loading, setLoading] = useState(false);
+  const [lotesExistentes, setLotesExistentes] = useState<Lote[]>([]); // Guardar todos os lotes para verificação de duplicidade
 
+  // Carregar todos os lotes existentes para checar duplicidade de número de lote
+  useEffect(() => {
+    const fetchLotes = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/lote');
+        setLotesExistentes(response.data);
+      } catch (error) {
+        toast.error('Erro ao carregar lotes existentes.');
+      }
+    };
+    fetchLotes();
+  }, []);
 
   useEffect(() => {
     if (loteEdit) {
@@ -33,38 +44,50 @@ const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void
       setValue('idade_media', loteEdit.idade_media);
       setValue('data_compra', loteEdit.data_compra);
       setValue('numero_lote', loteEdit.numero_lote);
-
     } else {
       reset();
     }
   }, [loteEdit, setValue, reset]);
 
-
+  // Verificar se o número do lote já existe
+  const verificarNumeroLoteDuplicado = (numero_lote: number) => {
+    return lotesExistentes.some((lote) => lote.numero_lote === numero_lote && (!loteEdit || lote.id !== loteEdit.id));
+  };
 
   const onSubmit = async (data: Lote) => {
+    if (data.quantidade <= 0 || data.peso <= 0 || data.valor_individual <= 0 || data.idade_media <= 0) {
+      toast.error('Todos os valores numéricos devem ser maiores que zero.');
+      return;
+    }
+
+    if (verificarNumeroLoteDuplicado(data.numero_lote)) {
+      toast.error('O número do lote já existe. Escolha outro número.');
+      return;
+    }
+
     setLoading(true);
     try {
       if (loteEdit) {
-        const response = await axios.put(`http://127.0.0.1:8000/api/lote/${loteEdit.id}`, data); // URL da API para atualização
+        const response = await axios.put(`http://127.0.0.1:8000/api/lote/${loteEdit.id}`, data);
 
-        if (parseInt(response.data.sucesso) == 99) {
-          toast.warning('Lote invalido');
-          return
+        if (parseInt(response.data.sucesso) === 99) {
+          toast.warning('Lote inválido');
+          return;
         }
 
-        toast.success('lote atualizado com sucesso!');
+        toast.success('Lote atualizado com sucesso!');
         onloteCriado();
       } else {
-        const response = await axios.post('http://127.0.0.1:8000/api/cadlote', data); // URL da API a ser utilizada
+        const response = await axios.post('http://127.0.0.1:8000/api/cadlote', data);
 
-        if (parseInt(response.data.sucesso) == 99) {
-          toast.warning('Lote invalido');
-          return
+        if (parseInt(response.data.sucesso) === 99) {
+          toast.warning('Lote inválido');
+          return;
         }
 
         toast.success('Lote cadastrado com sucesso!');
-        onloteCriado(); // Atualiza a lista de lotes após cadastrar
-        reset(); // Limpa o formulário
+        onloteCriado();
+        reset();
       }
     } catch (error) {
       console.error('Erro ao cadastrar lote:', error);
@@ -78,27 +101,32 @@ const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="mb-3">
         <label htmlFor="quantidade" className="form-label">Quantidade</label>
-        <input type="number" className="form-control" id="quantidade" {...register('quantidade', { required: true })} />
+        <input type="number" className="form-control" id="quantidade" {...register('quantidade', { required: true, min: 1 })} />
+        {watch('quantidade') <= 0 && <p className="text-danger">A quantidade deve ser maior que zero.</p>}
       </div>
       <div className="mb-3">
         <label htmlFor="peso" className="form-label">Peso Médio (Kg)</label>
-        <input type="number" className="form-control" id="peso" {...register('peso', { required: true })} />
+        <input type="number" className="form-control" id="peso" {...register('peso', { required: true, min: 1 })} />
+        {watch('peso') <= 0 && <p className="text-danger">O peso deve ser maior que zero.</p>}
       </div>
       <div className="mb-3">
-        <label htmlFor="valor_individual" className="form-label">Valor individual</label>
-        <input type="number" className="form-control" id="valor_individual" {...register('valor_individual', { required: true })} />
+        <label htmlFor="valor_individual" className="form-label">Valor Individual</label>
+        <input type="number" className="form-control" id="valor_individual" {...register('valor_individual', { required: true, min: 1 })} />
+        {watch('valor_individual') <= 0 && <p className="text-danger">O valor deve ser maior que zero.</p>}
       </div>
       <div className="mb-3">
-        <label htmlFor="idade_media" className="form-label">Idade Média (Em Meses)</label>
-        <input type="number" className="form-control" id="idade_media" {...register('idade_media', { required: true })} />
+        <label htmlFor="idade_media" className="form-label">Idade Média (Meses)</label>
+        <input type="number" className="form-control" id="idade_media" {...register('idade_media', { required: true, min: 1 })} />
+        {watch('idade_media') <= 0 && <p className="text-danger">A idade média deve ser maior que zero.</p>}
       </div>
       <div className="mb-3">
         <label htmlFor="data_compra" className="form-label">Data da Compra</label>
         <input type="date" className="form-control" id="data_compra" {...register('data_compra', { required: true })} />
       </div>
       <div className="mb-3">
-        <label htmlFor="numero_lote" className="form-label">Numero do Lote</label>
-        <input type="number" className="form-control" id="numero_lote" {...register('numero_lote', { required: true })} />
+        <label htmlFor="numero_lote" className="form-label">Número do Lote</label>
+        <input type="number" className="form-control" id="numero_lote" {...register('numero_lote', { required: true, min: 1 })} />
+        {verificarNumeroLoteDuplicado(watch('numero_lote')) && <p className="text-danger">Número do lote já existe.</p>}
       </div>
       <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? 'Salvando...' : 'Salvar'}
@@ -107,7 +135,7 @@ const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void
   );
 };
 
-// Componente para listar os médicos
+// Componente para listar os lotes
 const Listalotes = ({ lotes, onloteEdit, onloteCriada }: { lotes: Lote[], onloteEdit: (lote: Lote) => void, onloteCriada: () => void }) => {
   const [showModal, setShowModal] = useState(false); // Controla a visibilidade do modal
   const [loteToDelete, setLoteToDelete] = useState<Lote | null>(null); // Lote a ser excluído

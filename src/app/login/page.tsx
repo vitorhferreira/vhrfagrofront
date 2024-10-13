@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 import styles from './style.module.css';
 import axios from 'axios';
@@ -13,13 +13,16 @@ const Login = () => {
     const router = useRouter();
     const refForm = useRef<any>();
     const [toast, setToast] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false); // Modal de carregamento geral
     const [senhaVisivel, setSenhaVisivel] = useState(false);
     const [forgotPasswordModal, setForgotPasswordModal] = useState(false);
     const [email, setEmail] = useState('');
     const [emailToast, setEmailToast] = useState(false);
+    const [emailErrorModal, setEmailErrorModal] = useState(false); // Estado para mostrar o modal de erro
+    const [emailSuccessModal, setEmailSuccessModal] = useState(false); // Estado para mostrar o modal de sucesso
+    const [isEmailLoading, setIsEmailLoading] = useState(false); // Controle para mostrar o modal de carregamento
 
-    useEffect(() => { setCookie(undefined, 'logado', 'false'); }, [])
+    useEffect(() => { setCookie(undefined, 'logado', 'false'); }, []);
 
     // Função de login
     const submitForm = useCallback((e: SyntheticEvent) => {
@@ -54,13 +57,24 @@ const Login = () => {
 
     // Função para solicitar redefinição de senha
     const handleForgotPassword = async () => {
+        setIsEmailLoading(true); // Inicia o modal de carregamento
+
         try {
             await axios.post('http://127.0.0.1:8000/api/solicitar-redefinicao-senha', { email });
-            setEmailToast(true);
+            setEmailSuccessModal(true); // Mostra o modal de sucesso
             setForgotPasswordModal(false);
-        } catch (error) {
-            console.error(error);
-            alert('Erro ao enviar o e-mail de redefinição de senha. Tente novamente.');
+        } catch (error: any) {
+            console.log('Erro ao enviar o e-mail de redefinição:', error);
+
+            if (error.response && error.response.status === 400) {
+                setEmailErrorModal(true); // Mostra o modal de erro quando já existe um e-mail enviado
+            } else {
+                // Caso outro erro ocorra, também mostramos o modal de erro
+                console.log('Erro não tratado:', error.message);
+                setEmailErrorModal(true);
+            }
+        } finally {
+            setIsEmailLoading(false); // Para o modal de carregamento
         }
     };
 
@@ -74,14 +88,6 @@ const Login = () => {
                 colors="danger"
                 onClose={() => {
                     setToast(false);
-                }}
-            />
-            <Toast
-                show={emailToast}
-                message="E-mail de redefinição enviado com sucesso!"
-                colors="success"
-                onClose={() => {
-                    setEmailToast(false);
                 }}
             />
             <div className={styles.main}>
@@ -192,6 +198,64 @@ const Login = () => {
                             <button
                                 className="btn btn-secondary"
                                 onClick={() => setForgotPasswordModal(false)}
+                            >
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Modal de Carregando (exibido durante a requisição de redefinição de senha) */}
+            <div className={`modal fade ${isEmailLoading ? 'show' : ''}`} style={{ display: isEmailLoading ? 'block' : 'none' }} tabIndex={-1} role="dialog">
+                <div className="modal-dialog modal-dialog-centered" role="document">
+                    <div className="modal-content">
+                        <div className="modal-body text-center">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Carregando...</span>
+                            </div>
+                            <p>Aguarde, estamos processando seu pedido...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Modal de Sucesso no Envio do E-mail */}
+            <div className={`modal fade ${emailSuccessModal ? 'show' : ''}`} style={{ display: emailSuccessModal ? 'block' : 'none' }} tabIndex={-1} role="dialog">
+                <div className="modal-dialog modal-dialog-centered" role="document">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">E-mail Enviado</h5>
+                        </div>
+                        <div className="modal-body">
+                            <p>O link de redefinição de senha foi enviado com sucesso! Ele é válido por 30 minutos.</p>
+                        </div>
+                        <div className="modal-footer">
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => setEmailSuccessModal(false)}
+                            >
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Modal de Erro no Envio do E-mail */}
+            <div className={`modal fade ${emailErrorModal ? 'show' : ''}`} style={{ display: emailErrorModal ? 'block' : 'none' }} tabIndex={-1} role="dialog">
+                <div className="modal-dialog modal-dialog-centered" role="document">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">Erro no Envio do E-mail</h5>
+                        </div>
+                        <div className="modal-body">
+                            <p>Já foi enviado um e-mail de redefinição de senha recentemente. Por favor, tente novamente após 30 minutos.</p>
+                        </div>
+                        <div className="modal-footer">
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => setEmailErrorModal(false)}
                             >
                                 Fechar
                             </button>
