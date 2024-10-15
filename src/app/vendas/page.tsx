@@ -19,6 +19,7 @@ interface Venda {
   prazo_pagamento: string;
   data_compra: string;
   recebido: boolean; // Adicionado para controlar o status de recebimento
+  documento?: string; // Novo campo para o documento
 }
 
 interface Lote {
@@ -62,6 +63,7 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
       setValue('quantidade_vendida', vendaEdit.quantidade_vendida);
       setValue('prazo_pagamento', vendaEdit.prazo_pagamento);
       setValue('data_compra', vendaEdit.data_compra);
+      setValue('documento', vendaEdit.documento);
       handleLoteChange({ target: { value: vendaEdit.numero_lote } } as any);
     } else {
       reset();
@@ -111,32 +113,43 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
         return;
       }
 
-      const vendaData = {
-        ...data,
-        lote_id,
-      };
+      const formData = new FormData();
+      formData.append('lote_id', lote_id.toString());
+      formData.append('numero_lote', data.numero_lote);
+      formData.append('peso_medio_venda', data.peso_medio_venda);
+      formData.append('comprador', data.comprador);
+      formData.append('cpf_cnpj_comprador', data.cpf_cnpj_comprador);
+      formData.append('valor_unitario', data.valor_unitario);
+      formData.append('quantidade_vendida', data.quantidade_vendida);
+      formData.append('prazo_pagamento', data.prazo_pagamento);
+      formData.append('data_compra', data.data_compra);
+
+      // Anexa o documento, se presente
+      const documento = watch('documento');
+      if (documento && documento.length > 0) {
+        formData.append('documento', documento[0]);
+      }
 
       // Cadastra a venda
       if (vendaEdit) {
-        await axios.put(`http://127.0.0.1:8000/api/vendas/${vendaEdit.id}`, vendaData);
+        await axios.post(`http://127.0.0.1:8000/api/vendas/${vendaEdit.id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
         toast.success('Venda atualizada com sucesso!');
       } else {
-        await axios.post('http://127.0.0.1:8000/api/vendas', vendaData);
+        await axios.post('http://127.0.0.1:8000/api/vendas', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
         toast.success('Venda cadastrada com sucesso!');
-      }
-
-      // Atualiza a quantidade de lotes após a venda
-      const novaQuantidade = quantidadeDisponivel! - Number(data.quantidade_vendida);
-      
-      if (novaQuantidade >= 0) {
-        await axios.put(`http://127.0.0.1:8000/api/lotes/${lote_id}/quantidade`, { quantidade: novaQuantidade });
-        toast.info('Lote atualizado com sucesso!');
-      } else {
-        toast.error('Erro ao atualizar a quantidade do lote.');
       }
 
       onVendaCriada();
       reset();
+      window.location.reload(); // Atualiza a página
     } catch (error) {
       console.error('Erro ao cadastrar venda:', error);
       toast.error('Erro ao cadastrar venda. Verifique os campos e tente novamente.');
@@ -221,6 +234,10 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
         <label htmlFor="data_compra" className="form-label">Data da Compra:</label>
         <input type="date" className="form-control" id="data_compra" {...register('data_compra', { required: true })} />
       </div>
+      <div className="mb-3">
+        <label htmlFor="documento" className="form-label">Documento (Opcional):</label>
+        <input type="file" className="form-control" id="documento" {...register('documento')} />
+      </div>
       <button type="submit" className="btn btn-primary" disabled={loading || !isQuantidadeValida() || !isValorValido()}>
         {loading ? 'Salvando...' : 'Salvar'}
       </button>
@@ -240,106 +257,113 @@ const verificarAtraso = (dataCompra: string, prazoPagamento: string) => {
 
 // Componente para listar as vendas
 const ListaVendas = ({ vendas, onVendaEdit, onVendaCriada }: { vendas: Venda[], onVendaEdit: (venda: Venda) => void, onVendaCriada: () => void }) => {
-    const [showModal, setShowModal] = useState(false);
-    const [vendaToDelete, setVendaToDelete] = useState<Venda | null>(null);
-  
-    const handleDeleteConfirmation = (venda: Venda) => {
-      setVendaToDelete(venda);
-      setShowModal(true);
-    };
-  
-    const handleDelete = async () => {
-      if (vendaToDelete) {
-        try {
-          await axios.delete(`http://127.0.0.1:8000/api/vendas/${vendaToDelete.id}`);
-          toast.success('Venda excluída com sucesso.');
-          onVendaCriada();
-        } catch (error) {
-          toast.error('Erro ao excluir venda.');
-        } finally {
-          setShowModal(false);
-        }
-      }
-    };
-  
-    const toggleRecebido = async (venda: Venda) => {
+  const [showModal, setShowModal] = useState(false);
+  const [vendaToDelete, setVendaToDelete] = useState<Venda | null>(null);
+
+  const handleDeleteConfirmation = (venda: Venda) => {
+    setVendaToDelete(venda);
+    setShowModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (vendaToDelete) {
       try {
-        const url = venda.recebido
-          ? `http://127.0.0.1:8000/api/vendas/${venda.id}/naorecebido`
-          : `http://127.0.0.1:8000/api/vendas/${venda.id}/recebido`;
-  
-        const response = await axios.put(url);
-        if (response.data.sucesso) {
-          toast.success('Status de recebimento atualizado com sucesso');
-          onVendaCriada();
-        } else {
-          toast.error('Erro ao atualizar status de recebimento');
-        }
+        await axios.delete(`http://127.0.0.1:8000/api/vendas/${vendaToDelete.id}`);
+        toast.success('Venda excluída com sucesso.');
+        window.location.reload(); // Atualiza a página
+        onVendaCriada();
       } catch (error) {
+        toast.error('Erro ao excluir venda.');
+      } finally {
+        setShowModal(false);
+      }
+    }
+  };
+
+  const toggleRecebido = async (venda: Venda) => {
+    try {
+      const url = venda.recebido
+        ? `http://127.0.0.1:8000/api/vendas/${venda.id}/naorecebido`
+        : `http://127.0.0.1:8000/api/vendas/${venda.id}/recebido`;
+
+      const response = await axios.put(url);
+      if (response.data.sucesso) {
+        toast.success('Status de recebimento atualizado com sucesso');
+        window.location.reload(); // Atualiza a página
+        onVendaCriada();
+      } else {
         toast.error('Erro ao atualizar status de recebimento');
       }
-    };
-  
-    return (
-      <div>
-        <h2>Lista de Vendas:</h2>
-        <ul>
-          {vendas.map((venda) => {
-            const emAtraso = verificarAtraso(venda.data_compra, venda.prazo_pagamento) && !venda.recebido;
+    } catch (error) {
+      toast.error('Erro ao atualizar status de recebimento');
+    }
+  };
 
-            return (
-              <li
-                key={venda.id}
-                style={{
-                  margin: '15px 0',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  backgroundColor: venda.recebido ? '#d4edda' : emAtraso ? '#f8d7da' : '#fff', // Verde se recebido, vermelho se em atraso
-                }}
-              >
-                <h3 style={{ margin: '0', color: '#007bff' }}>Lote: {venda.numero_lote}</h3>
-                <strong>Peso Médio de Venda (Kg):</strong> {venda.peso_medio_venda}<br />
-                <strong>Comprador:</strong> {venda.comprador}<br />
-                <strong>CPF/CNPJ:</strong> {venda.cpf_cnpj_comprador}<br />
-                <strong>Valor Unitário:</strong> {`R$ ${Number(venda.valor_unitario).toFixed(2).replace('.', ',')}`}<br />
-                <strong>Quantidade Vendida:</strong> {venda.quantidade_vendida}<br />
-                <strong>Prazo de Pagamento:</strong> {venda.prazo_pagamento} dias<br />
-                <strong>Data da Compra:</strong> {new Date(venda.data_compra).toLocaleDateString('pt-BR')}<br />
-                <strong>Status de Recebimento:</strong> {venda.recebido ? 'Recebido' : emAtraso ? 'Em Atraso' : 'Não Recebido'}<br />
-                <div className="actions" style={{ marginTop: '10px' }}>
-                  <button className='btn btn-danger' style={{ marginRight: '10px' }} onClick={() => handleDeleteConfirmation(venda)}>Excluir</button>
-                  <button className='btn btn-secondary' onClick={() => toggleRecebido(venda)}>
-                    {venda.recebido ? 'Marcar como Não Recebido' : 'Marcar como Recebido'}
-                  </button>
+  return (
+    <div>
+      <h2>Lista de Vendas:</h2>
+      <ul>
+        {vendas.map((venda) => {
+          const emAtraso = verificarAtraso(venda.data_compra, venda.prazo_pagamento) && !venda.recebido;
+
+          return (
+            <li
+              key={venda.id}
+              style={{
+                margin: '15px 0',
+                padding: '10px',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                backgroundColor: venda.recebido ? '#d4edda' : emAtraso ? '#f8d7da' : '#fff', // Verde se recebido, vermelho se em atraso
+              }}
+            >
+              <h3 style={{ margin: '0', color: '#007bff' }}>Lote: {venda.numero_lote}</h3>
+              <strong>Peso Médio de Venda (Kg):</strong> {venda.peso_medio_venda}<br />
+              <strong>Comprador:</strong> {venda.comprador}<br />
+              <strong>CPF/CNPJ:</strong> {venda.cpf_cnpj_comprador}<br />
+              <strong>Valor Unitário:</strong> {`R$ ${Number(venda.valor_unitario).toFixed(2).replace('.', ',')}`}<br />
+              <strong>Quantidade Vendida:</strong> {venda.quantidade_vendida}<br />
+              <strong>Prazo de Pagamento:</strong> {venda.prazo_pagamento} dias<br />
+              <strong>Data da Compra:</strong> {new Date(venda.data_compra).toLocaleDateString('pt-BR')}<br />
+              {venda.documento && (
+                <div>
+                  <strong>Documento:</strong> <a href={`http://127.0.0.1:8000/storage/${venda.documento}`} download>Baixar Documento</a><br />
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-  
-        {showModal && (
-          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }} tabIndex={-1}>
-            <div className="modal-dialog">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">Confirmar Exclusão</h5>
-                  <button type="button" className="btn-close" onClick={() => setShowModal(false)} />
-                </div>
-                <div className="modal-body">
-                  <p>Você tem certeza que deseja excluir a venda do lote <strong>{vendaToDelete?.numero_lote}</strong>?</p>
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
-                  <button type="button" className="btn btn-danger" onClick={handleDelete}>Excluir</button>
-                </div>
+              )}
+              <strong>Status de Recebimento:</strong> {venda.recebido ? 'Recebido' : emAtraso ? 'Em Atraso' : 'Não Recebido'}<br />
+              <div className="actions" style={{ marginTop: '10px' }}>
+                <button className='btn btn-danger' style={{ marginRight: '10px' }} onClick={() => handleDeleteConfirmation(venda)}>Excluir</button>
+                <button className='btn btn-secondary' onClick={() => toggleRecebido(venda)}>
+                  {venda.recebido ? 'Marcar como Não Recebido' : 'Marcar como Recebido'}
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      {showModal && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }} tabIndex={-1}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Confirmar Exclusão</h5>
+                <button type="button" className="btn-close" onClick={() => setShowModal(false)} />
+              </div>
+              <div className="modal-body">
+                <p>Você tem certeza que deseja excluir a venda do lote <strong>{vendaToDelete?.numero_lote}</strong>?</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button type="button" className="btn btn-danger" onClick={handleDelete}>Excluir</button>
               </div>
             </div>
           </div>
-        )}
-      </div>
-    );
-  };
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Componente principal Dashboard
 const Dashboard = () => {
