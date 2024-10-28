@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState } from 'react';
 import axios from 'axios';
@@ -11,8 +11,8 @@ import 'bootstrap-icons/font/bootstrap-icons.css'; // Importar ícones do Bootst
 // Interface para os dados do usuário
 interface Usuario {
   nome: string;
-  cpf: string;
-  email: string; // Novo campo de e-mail
+  cpfCnpj: string;
+  email: string;
   senha: string;
   confirmarSenha: string;
 }
@@ -20,72 +20,98 @@ interface Usuario {
 const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void }) => {
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<Usuario>();
   const [loading, setLoading] = useState(false);
+  const [cpfCnpj, setCpfCnpj] = useState(''); // Estado para o CPF/CNPJ
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [confirmarSenhaVisivel, setConfirmarSenhaVisivel] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false); // Modal de erro
   const [errorMessage, setErrorMessage] = useState(''); // Mensagem de erro
-  const senha = watch('senha'); // Obter valor do campo "senha"
+  const senha = watch('senha'); // Observar o campo de senha
 
+  // Função de validação de senha
   const senhaValida = (senha: string) => {
-    // Verifica se a senha atende aos critérios: maiúsculas, números e caracteres especiais
     const regex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/;
     return regex.test(senha);
   };
 
-  const verificarUsuarioExistente = async (cpf: string, email: string) => {
-    try {
-      const response = await axios.post('http://127.0.0.1:8000/api/verificarUsuario', { cpf, email });
-      
-      if (response.data.cpfExistente || response.data.emailExistente) {
-        return {
-          cpfExistente: response.data.cpfExistente,
-          emailExistente: response.data.emailExistente
-        };
-      }
+  // Função para remover a máscara antes de enviar ao backend
+  const removerMascara = (valor: string) => valor.replace(/\D/g, '');
 
-      return null; // Caso o CPF e o email não estejam cadastrados
-    } catch (error) {
-      console.error('Erro ao verificar usuário:', error);
-      return { error: 'Erro ao verificar usuário.' };
+  // Função de formatação do CPF/CNPJ para exibir no frontend
+  const formatarCpfCnpj = (valor: string) => {
+    valor = valor.replace(/\D/g, ''); // Remove tudo que não for dígito
+    if (valor.length <= 11) {
+      // CPF
+      valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+      valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+      valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+      // CNPJ
+      valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
+      valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+      valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
+      valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
     }
+    return valor;
   };
 
+  // Função de submissão do formulário
   const onSubmit = async (data: Usuario) => {
     setLoading(true);
     try {
-      // Verificar se o CPF ou o e-mail já estão cadastrados
-      const usuarioExistente = await verificarUsuarioExistente(data.cpf, data.email);
+      const { confirmarSenha, cpfCnpj, ...userData } = data; // Remove "confirmarSenha" antes de enviar
+      const cpfCnpjSemMascara = removerMascara(cpfCnpj); // Remove a máscara do CPF/CNPJ
 
-      if (usuarioExistente?.cpfExistente || usuarioExistente?.emailExistente) {
-        // Exibir modal de erro
-        if (usuarioExistente.cpfExistente && usuarioExistente.emailExistente) {
-          setErrorMessage('CPF e e-mail já estão cadastrados.');
-        } else if (usuarioExistente.cpfExistente) {
-          setErrorMessage('CPF já está cadastrado.');
-        } else if (usuarioExistente.emailExistente) {
-          setErrorMessage('E-mail já está cadastrado.');
-        }
-        setShowErrorModal(true);
-        setLoading(false);
-        return;
-      }
+      // Envia os dados para o backend com o CPF/CNPJ sem máscara
+      const response = await axios.post('http://127.0.0.1:8000/api/caduser', {
+        ...userData,
+        cpf: cpfCnpjSemMascara, // Envia como 'cpf' para o backend
+      });
 
-      // Remover a confirmação de senha dos dados enviados ao servidor
-      const { confirmarSenha, ...userData } = data;
-
-      const response = await axios.post('http://127.0.0.1:8000/api/caduser', userData);
-
-      if (parseInt(response.data.sucesso) === 99) {
-        toast.warning('CPF inválido');
-        return;
-      }
-
+      // Caso de sucesso
       toast.success('Usuário cadastrado com sucesso!');
       onUsuarioCadastrado();
       reset(); // Limpa o formulário
-    } catch (error) {
-      console.error('Erro ao cadastrar usuário:', error);
-      toast.error('Erro ao cadastrar usuário. Verifique os campos e tente novamente.');
+      setCpfCnpj(''); // Reseta o campo de CPF/CNPJ
+    } catch (error: any) {
+      let mensagemErro = '';
+
+      // Verificando erros de validação do CPF/CNPJ e email
+      if (error.response && error.response.status === 422) {
+        const backendError = error.response.data.error;
+
+        if (backendError === 'CPF/CNPJ inválido') {
+          mensagemErro += 'CPF/CNPJ inválido. ';
+        }
+
+        const validationErrors = error.response.data.errors;
+
+        if (validationErrors?.email) {
+          mensagemErro += 'E-mail já cadastrado. ';
+        }
+        if (validationErrors?.cpf) {
+          mensagemErro += 'CPF/CNPJ já cadastrado. ';
+        }
+
+      }
+      // Verifica se o erro é de CPF ou email já cadastrados (status 409)
+      else if (error.response && error.response.status === 409) {
+        const { cpfExistente, emailExistente } = error.response.data;
+
+        if (cpfExistente && emailExistente) {
+          mensagemErro = 'CPF e e-mail já estão cadastrados.';
+        } else if (cpfExistente) {
+          mensagemErro = 'CPF já está cadastrado.';
+        } else if (emailExistente) {
+          mensagemErro = 'E-mail já está cadastrado.';
+        }
+      }
+      // Outros erros
+      else {
+        mensagemErro = 'Erro ao cadastrar usuário. Verifique os campos e tente novamente.';
+      }
+
+      setErrorMessage(mensagemErro);
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -96,20 +122,36 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
       <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
         <div className="mb-3">
           <label htmlFor="nome" className="form-label">Nome</label>
-          <input type="text" className="form-control" id="nome" {...register('nome', { required: 'Nome é obrigatório' })} />
+          <input
+            type="text"
+            className="form-control"
+            id="nome"
+            {...register('nome', { required: 'Nome é obrigatório' })}
+          />
           {errors.nome && <span className="text-danger">{errors.nome.message}</span>}
         </div>
 
         <div className="mb-3">
-          <label htmlFor="cpf" className="form-label">CPF</label>
-          <input type="text" className="form-control" id="cpf" {...register('cpf', { required: 'CPF é obrigatório' })} />
-          {errors.cpf && <span className="text-danger">{errors.cpf.message}</span>}
+          <label htmlFor="cpfCnpj" className="form-label">CPF ou CNPJ</label>
+          <input
+            type="text"
+            className="form-control"
+            id="cpfCnpj"
+            value={cpfCnpj} // Usa o estado para o valor do campo
+            {...register('cpfCnpj', { required: 'CPF ou CNPJ é obrigatório' })}
+            onChange={(e) => setCpfCnpj(formatarCpfCnpj(e.target.value))} // Atualiza o estado e aplica a máscara
+          />
+          {errors.cpfCnpj && <span className="text-danger">{errors.cpfCnpj.message}</span>}
         </div>
 
-        {/* Novo campo de email */}
         <div className="mb-3">
           <label htmlFor="email" className="form-label">E-mail</label>
-          <input type="email" className="form-control" id="email" {...register('email', { required: 'E-mail é obrigatório' })} />
+          <input
+            type="email"
+            className="form-control"
+            id="email"
+            {...register('email', { required: 'E-mail é obrigatório' })}
+          />
           {errors.email && <span className="text-danger">{errors.email.message}</span>}
         </div>
 
@@ -122,6 +164,10 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
               id="senha"
               {...register('senha', {
                 required: 'Senha é obrigatória',
+                minLength: {
+                  value: 8,
+                  message: 'A senha deve ter no mínimo 8 caracteres.'
+                },
                 validate: {
                   validPassword: value =>
                     senhaValida(value) || 'A senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial.'
@@ -190,8 +236,7 @@ const Cadastro = () => {
   const router = useRouter();
 
   const handleUsuarioCadastrado = () => {
-    // Lógica após o cadastro do usuário, se necessário
-    router.push('/login'); // Redireciona para a página de login após o cadastro
+    router.push('/cadastro_usuario');
   };
 
   return (

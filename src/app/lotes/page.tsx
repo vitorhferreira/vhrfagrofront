@@ -18,10 +18,26 @@ interface Lote {
   documento?: string; // Novo campo para o documento
 }
 
+// Função para formatar valor monetário (R$)
+const formatarValorMonetario = (valor: string) => {
+  valor = valor.replace(/\D/g, ''); // Remove caracteres não numéricos
+  valor = (Number(valor) / 100).toFixed(2) + ''; // Divide por 100 e fixa em 2 casas decimais
+  valor = valor.replace('.', ','); // Substitui ponto por vírgula
+  valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Insere ponto a cada milhar
+  return 'R$ ' + valor;
+};
+
+// Função para remover a máscara de valor antes de enviar para o backend
+const removerMascaraValor = (valor: string) => {
+  const valorNumerico = parseFloat(valor.replace(/\D/g, '')) / 100; // Divide por 100 após remover todos os caracteres não numéricos
+  return valorNumerico.toFixed(2); // Retorna o valor em formato decimal com duas casas decimais
+};
+
 const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void, loteEdit?: Lote }) => {
   const { register, handleSubmit, reset, setValue, watch } = useForm<Lote>();
   const [loading, setLoading] = useState(false);
   const [lotesExistentes, setLotesExistentes] = useState<Lote[]>([]); // Guardar todos os lotes para verificação de duplicidade
+  const [valorIndividual, setValorIndividual] = useState(''); // Estado para o valor individual com máscara
 
   // Carregar todos os lotes existentes para checar duplicidade de número de lote
   useEffect(() => {
@@ -40,7 +56,7 @@ const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void
     if (loteEdit) {
       setValue('quantidade', loteEdit.quantidade);
       setValue('peso', loteEdit.peso);
-      setValue('valor_individual', loteEdit.valor_individual);
+      setValorIndividual(formatarValorMonetario(loteEdit.valor_individual)); // Formatar o valor existente
       setValue('idade_media', loteEdit.idade_media);
       setValue('data_compra', loteEdit.data_compra);
       setValue('numero_lote', loteEdit.numero_lote);
@@ -55,7 +71,7 @@ const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void
   };
 
   const onSubmit = async (data: Lote) => {
-    if (data.quantidade <= 0 || data.peso <= 0 || data.valor_individual <= 0 || data.idade_media <= 0) {
+    if (data.quantidade <= 0 || data.peso <= 0 || removerMascaraValor(valorIndividual) === '' || data.idade_media <= 0) {
       toast.error('Todos os valores numéricos devem ser maiores que zero.');
       return;
     }
@@ -70,10 +86,10 @@ const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void
       const formData = new FormData();
       formData.append('quantidade', data.quantidade.toString());
       formData.append('peso', data.peso.toString());
-      formData.append('valor_individual', data.valor_individual);
+      formData.append('valor_individual', removerMascaraValor(valorIndividual)); // Enviar valor sem máscara
       formData.append('idade_media', data.idade_media);
       formData.append('data_compra', data.data_compra);
-      formData.append('numero_lote', data.numero_lote.toString());
+      formData.append('numero_lote', parseInt(data.numero_lote.toString(), 10).toString()); // Certificar que está enviando como inteiro
 
       // Adiciona o documento ao formulário se for enviado
       const documento = watch('documento');
@@ -98,6 +114,7 @@ const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void
         toast.success('Lote cadastrado com sucesso!');
         onloteCriado();
         reset();
+        setValorIndividual(''); // Limpar o campo de valor individual após o reset
       }
     } catch (error) {
       console.error('Erro ao cadastrar lote:', error);
@@ -105,7 +122,7 @@ const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void
     } finally {
       setLoading(false);
     }
-  };
+};
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -121,8 +138,15 @@ const CadastroLoteForm = ({ onloteCriado, loteEdit }: { onloteCriado: () => void
       </div>
       <div className="mb-3">
         <label htmlFor="valor_individual" className="form-label">Valor Individual</label>
-        <input type="number" className="form-control" id="valor_individual" {...register('valor_individual', { required: true, min: 1 })} />
-        {watch('valor_individual') <= 0 && <p className="text-danger">O valor deve ser maior que zero.</p>}
+        <input
+          type="text"
+          className="form-control"
+          id="valor_individual"
+          value={valorIndividual} // Valor com máscara
+          onChange={(e) => setValorIndividual(formatarValorMonetario(e.target.value))} // Aplica a máscara enquanto digita
+          required
+        />
+        {removerMascaraValor(valorIndividual) === '' && <p className="text-danger">O valor deve ser maior que zero.</p>}
       </div>
       <div className="mb-3">
         <label htmlFor="idade_media" className="form-label">Idade Média (Meses)</label>

@@ -9,7 +9,7 @@ interface User {
     id: number;
     nome: string;
     cpf: string;
-    email: string; // Adicionado campo de email
+    email: string;
     idade: number;
 }
 
@@ -44,7 +44,7 @@ const Users = () => {
                 toast.error('Erro ao deletar usuário!');
             } finally {
                 setShowModal(false);
-                setUserIdToDelete(null); // Reset the userIdToDelete
+                setUserIdToDelete(null);
             }
         }
     };
@@ -84,7 +84,7 @@ const Users = () => {
                                         <tr>
                                             <th>Nome</th>
                                             <th>CPF</th>
-                                            <th>Email</th> {/* Adicionado o campo de email na tabela */}
+                                            <th>Email</th>
                                             <th>Ações</th>
                                         </tr>
                                     </thead>
@@ -93,7 +93,7 @@ const Users = () => {
                                             <tr key={user.id}>
                                                 <td>{user.nome}</td>
                                                 <td>{user.cpf}</td>
-                                                <td>{user.email}</td> {/* Exibindo o email */}
+                                                <td>{user.email}</td>
                                                 <td>
                                                     <button className='btn btn-outline-primary me-2' onClick={() => router.push(`/editaruser?id=${user.id}`)}>
                                                         Editar

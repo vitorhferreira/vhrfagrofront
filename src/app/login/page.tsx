@@ -9,6 +9,27 @@ import { destroyCookie, setCookie } from 'nookies';
 import 'bootstrap-icons/font/bootstrap-icons.css'; // Importar ícones do Bootstrap
 import 'bootstrap/dist/css/bootstrap.min.css'; // Importando o CSS do Bootstrap
 
+// Função para remover a máscara antes de enviar ao backend
+const removerMascara = (valor: string) => valor.replace(/\D/g, '');
+
+// Função de formatação do CPF/CNPJ para exibir no frontend
+const formatarCpfCnpj = (valor: string) => {
+    valor = valor.replace(/\D/g, ''); // Remove tudo que não for dígito
+    if (valor.length <= 11) {
+        // CPF
+        valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+        valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+        valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+        // CNPJ
+        valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
+        valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+        valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
+        valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    return valor;
+};
+
 const Login = () => {
     const router = useRouter();
     const refForm = useRef<any>();
@@ -16,6 +37,7 @@ const Login = () => {
     const [loading, setLoading] = useState(false); // Modal de carregamento geral
     const [senhaVisivel, setSenhaVisivel] = useState(false);
     const [forgotPasswordModal, setForgotPasswordModal] = useState(false);
+    const [cpfCnpj, setCpfCnpj] = useState(''); // Estado para o CPF/CNPJ
     const [email, setEmail] = useState('');
     const [emailToast, setEmailToast] = useState(false);
     const [emailErrorModal, setEmailErrorModal] = useState(false); // Estado para mostrar o modal de erro
@@ -36,8 +58,11 @@ const Login = () => {
                 senha: { value: string };
             };
 
+            // Remover a máscara antes de enviar o CPF ao backend
+            const cpfCnpjSemMascara = removerMascara(cpfCnpj);
+
             axios.post('http://127.0.0.1:8000/api/login', {
-                cpf: target.cpf.value,
+                cpf: cpfCnpjSemMascara,
                 senha: target.senha.value,
             })
                 .then((resposta) => {
@@ -53,7 +78,7 @@ const Login = () => {
         } else {
             refForm.current.classList.add('was-validated');
         }
-    }, []);
+    }, [cpfCnpj]);
 
     // Função para solicitar redefinição de senha
     const handleForgotPassword = async () => {
@@ -117,10 +142,12 @@ const Login = () => {
                                 CPF:
                             </label>
                             <input
-                                type="number"
+                                type="text"
                                 className="form-control"
                                 placeholder="Digite seu CPF!"
                                 id="cpf"
+                                value={cpfCnpj} // Valor do CPF/CNPJ com máscara
+                                onChange={(e) => setCpfCnpj(formatarCpfCnpj(e.target.value))} // Aplica a máscara
                                 required
                             />
                             <div className="invalid-feedback">

@@ -28,6 +28,21 @@ interface Lote {
   numero_lote: number;
 }
 
+// Função para formatar valor monetário (R$)
+const formatarValorMonetario = (valor: string) => {
+  valor = valor.replace(/\D/g, ''); // Remove caracteres não numéricos
+  valor = (Number(valor) / 100).toFixed(2); // Divide por 100 e fixa em 2 casas decimais
+  valor = valor.replace('.', ','); // Substitui ponto por vírgula
+  valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Insere ponto a cada milhar
+  return 'R$ ' + valor;
+};
+
+// Função para remover a máscara de valor antes de enviar para o backend
+const removerMascaraValor = (valor: string) => {
+  const valorNumerico = parseFloat(valor.replace(/\D/g, '')) / 100; // Divide por 100 após remover os caracteres não numéricos
+  return valorNumerico.toFixed(2); // Retorna o valor em formato decimal com duas casas decimais
+};
+
 // Componente para o formulário de cadastro de gastovet
 const CadastroGastovetForm = ({ ongastovetCriada, gastovetEdit }: { ongastovetCriada: () => void, gastovetEdit?: Gastovet }) => {
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<Gastovet>();
@@ -35,6 +50,7 @@ const CadastroGastovetForm = ({ ongastovetCriada, gastovetEdit }: { ongastovetCr
   const [loteOption, setLoteOption] = useState<Lote[]>([]);
   const [selectedLote, setSelectedLote] = useState<string>('');
   const [quantidadeDisponivel, setQuantidadeDisponivel] = useState<number | null>(null);
+  const [valor, setValor] = useState(''); // Estado para o valor com máscara
   const qtdCabecas = watch('qtd_cabecas');
 
   useEffect(() => {
@@ -54,7 +70,7 @@ const CadastroGastovetForm = ({ ongastovetCriada, gastovetEdit }: { ongastovetCr
       setValue('motivo_gasto', gastovetEdit.motivo_gasto);
       setValue('qtd_cabecas', gastovetEdit.qtd_cabecas);
       setValue('data_pagamento', gastovetEdit.data_pagamento);
-      setValue('valor', gastovetEdit.valor);
+      setValor(formatarValorMonetario(gastovetEdit.valor)); // Formatar o valor existente
       setSelectedLote(gastovetEdit.lote);
       setValue('lote', gastovetEdit.lote);
     } else {
@@ -89,17 +105,25 @@ const CadastroGastovetForm = ({ ongastovetCriada, gastovetEdit }: { ongastovetCr
       return;
     }
 
+    const valorSemMascara = removerMascaraValor(valor); // Remover a máscara do valor antes de enviar
+
     setLoading(true);
     try {
+      const payload = {
+        ...data,
+        valor: valorSemMascara, // Enviar valor sem máscara
+      };
+
       if (gastovetEdit) {
-        await axios.put(`http://127.0.0.1:8000/api/gastovets/${gastovetEdit.id}`, data);
+        await axios.put(`http://127.0.0.1:8000/api/gastovets/${gastovetEdit.id}`, payload);
         toast.success('Gasto atualizado com sucesso!');
         ongastovetCriada();
       } else {
-        await axios.post('http://127.0.0.1:8000/api/cadgastovets', data);
+        await axios.post('http://127.0.0.1:8000/api/cadgastovets', payload);
         toast.success('Gasto cadastrado com sucesso!');
         ongastovetCriada();
         reset();
+        setValor(''); // Limpar o campo de valor após o reset
       }
     } catch (error) {
       console.error('Erro ao cadastrar Gasto:', error);
@@ -156,15 +180,14 @@ const CadastroGastovetForm = ({ ongastovetCriada, gastovetEdit }: { ongastovetCr
       <div className="mb-3">
         <label htmlFor="valor" className="form-label">Valor:</label>
         <input 
-          type="number" 
+          type="text" 
           className="form-control" 
           id="valor" 
-          {...register('valor', { 
-            required: "O valor é obrigatório", 
-            min: { value: 1, message: "O valor deve ser maior que 0." }
-          })}
+          value={valor} // Valor com máscara
+          onChange={(e) => setValor(formatarValorMonetario(e.target.value))} // Aplica a máscara enquanto digita
+          required
         />
-        {errors.valor && <div className="text-danger">{errors.valor.message}</div>}
+        {removerMascaraValor(valor) === '' && <p className="text-danger">O valor deve ser maior que zero.</p>}
       </div>
       <div className="mb-3">
         <label htmlFor="lote" className="form-label">Lote</label>
@@ -183,6 +206,7 @@ const CadastroGastovetForm = ({ ongastovetCriada, gastovetEdit }: { ongastovetCr
     </form>
   );
 };
+
 
 // Componente para listar os gastos
 const ListaGastovets = ({ gastovets, ongastovetEdit, ongastovetCriada }: { gastovets: Gastovet[], ongastovetEdit: (gastovet: Gastovet) => void, ongastovetCriada: () => void }) => {

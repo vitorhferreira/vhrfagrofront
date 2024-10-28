@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { parseCookies } from "nookies";
 import { redirect } from "next/navigation";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faSyringe, faFileInvoiceDollar, faDrumstickBite, faCashRegister, faChartBar, faUserCog } from '@fortawesome/free-solid-svg-icons';
+import { faBox, faSyringe, faFileInvoiceDollar, faDrumstickBite, faCashRegister, faChartBar, faUserCog, faUser } from '@fortawesome/free-solid-svg-icons'; // Importando o ícone de usuário
 
 interface IProps {
     children: React.ReactNode;
@@ -53,6 +53,12 @@ export const LayoutDashboard = (props: IProps) => {
                                     </a>
                                 </li>
                                 <li className="nav-item mb-3">
+                                    <a className="nav-link" href={'/individual'}>
+                                        <FontAwesomeIcon icon={faUser} size="lg" style={{ marginRight: '10px' }} /> {/* Ícone de usuário */}
+                                        Acompanhamento Individual
+                                    </a>
+                                </li>
+                                <li className="nav-item mb-3">
                                     <a className="nav-link" href={'/Vacinas'}>
                                         <FontAwesomeIcon icon={faSyringe} size="lg" style={{ marginRight: '10px' }} />
                                         Vacinas
@@ -62,6 +68,12 @@ export const LayoutDashboard = (props: IProps) => {
                                     <a className="nav-link" href={'/gastosVet'}>
                                         <FontAwesomeIcon icon={faFileInvoiceDollar} size="lg" style={{ marginRight: '10px' }} />
                                         Despesas e Pagamentos
+                                    </a>
+                                </li>
+                                <li className="nav-item mb-3">
+                                    <a className="nav-link" href={'/percas'}>
+                                        <FontAwesomeIcon icon={faFileInvoiceDollar} size="lg" style={{ marginRight: '10px' }} />
+                                        Percas
                                     </a>
                                 </li>
                                 <li className="nav-item mb-3">

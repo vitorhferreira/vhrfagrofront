@@ -5,14 +5,20 @@ import { redirect } from "next/navigation";
 import DashboardClient from "./dashboardClient"; // Importando o componente do gráfico
 
 export default async function Page() {
-    const cookie = cookies();
+    const cookie = await cookies(); // Aguarde a leitura do cookie
     const logado = cookie.get('logado');
 
     // Verificando se o usuário está logado
     if (!logado || logado.value !== 'true') {
-        redirect('/login');
-        return null; // Para evitar renderizar conteúdo se não autenticado
+        // Redireciona para a página de login ou outra ação
+        return (
+            <div>
+                <p>Usuário não está logado.</p>
+            </div>
+        );
     }
+
+
 
     return (
         <>
