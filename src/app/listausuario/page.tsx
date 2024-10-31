@@ -1,10 +1,12 @@
-'use client';
+// src/app/users/page.tsx
+'use client'
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { LayoutDashboard } from '@/components/LayoutDashboard';
 import { toast } from 'react-toastify';
 
+// Interface para os dados do usuário
 interface User {
     id: number;
     nome: string;
@@ -12,6 +14,24 @@ interface User {
     email: string;
     idade: number;
 }
+
+// Função de formatação de CPF/CNPJ
+const formatarCpfCnpj = (valor: string) => {
+    valor = valor.replace(/\D/g, ''); // Remove tudo que não for dígito
+    if (valor.length <= 11) {
+        // CPF
+        valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+        valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+        valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+        // CNPJ
+        valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
+        valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+        valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
+        valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    return valor;
+};
 
 const Users = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -83,7 +103,7 @@ const Users = () => {
                                     <thead className="table-dark">
                                         <tr>
                                             <th>Nome</th>
-                                            <th>CPF</th>
+                                            <th>CPF/CNPJ</th>
                                             <th>Email</th>
                                             <th>Ações</th>
                                         </tr>
@@ -91,9 +111,7 @@ const Users = () => {
                                     <tbody>
                                         {users.map(user => (
                                             <tr key={user.id}>
-                                                <td>{user.nome}</td>
-                                                <td>{user.cpf}</td>
-                                                <td>{user.email}</td>
+                                                <td>{user.nome}</td><td>{formatarCpfCnpj(user.cpf)}</td><td>{user.email}</td>
                                                 <td>
                                                     <button className='btn btn-outline-primary me-2' onClick={() => router.push(`/editaruser?id=${user.id}`)}>
                                                         Editar

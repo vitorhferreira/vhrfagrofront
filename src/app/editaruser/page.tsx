@@ -1,17 +1,39 @@
-// src/app/editar/page.tsx
+// src/app/editaruser/page.tsx
 'use client'
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LayoutDashboard } from '@/components/LayoutDashboard';
 import { toast } from 'react-toastify';
 import styles from './edita.module.css';
 
-const EditUser = ({ searchParams }: { searchParams: { id: string } }) => {
-  const router = useRouter();
-  const id = searchParams.id;
+// Função de formatação de CPF/CNPJ
+const formatarCpfCnpj = (valor: string) => {
+  valor = valor.replace(/\D/g, ''); // Remove tudo que não for dígito
+  if (valor.length <= 11) {
+    // CPF
+    valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+    valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+    valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  } else {
+    // CNPJ
+    valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
+    valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+    valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
+    valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
+  }
+  return valor;
+};
 
-  const [user, setUser] = useState({ id: '', nome: '', cpf: '', email: '', idade: '' }); // Incluído email no estado do usuário
+// Função para remover a máscara do CPF/CNPJ antes de enviar ao backend
+const removerMascara = (valor: string) => valor.replace(/\D/g, '');
+
+const EditUser = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id') || ''; // Obtém o ID da URL
+
+  const [user, setUser] = useState({ id: '', nome: '', cpf: '', email: '', idade: '' });
 
   useEffect(() => {
     fetchUser();
@@ -21,6 +43,9 @@ const EditUser = ({ searchParams }: { searchParams: { id: string } }) => {
     try {
       const response = await axios.get('http://127.0.0.1:8000/api/user');
       const user = response.data.find((user) => user.id === parseInt(id));
+      if (user) {
+        user.cpf = formatarCpfCnpj(user.cpf); // Formata o CPF/CNPJ ao buscar o usuário
+      }
       setUser(user);
     } catch (error) {
       console.error('Erro ao buscar usuário:', error);
@@ -35,7 +60,12 @@ const EditUser = ({ searchParams }: { searchParams: { id: string } }) => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`http://127.0.0.1:8000/api/user/${id}`, user);
+      const userToUpdate = {
+        ...user,
+        cpf: removerMascara(user.cpf) // Envia o CPF sem máscara para o backend
+      };
+
+      const response = await axios.put(`http://127.0.0.1:8000/api/user/${id}`, userToUpdate);
 
       if (parseInt(response.data.sucesso) === 98) {
         toast.warning('CPF já cadastrado na base de dados');
@@ -80,13 +110,12 @@ const EditUser = ({ searchParams }: { searchParams: { id: string } }) => {
                   id="cpf"
                   name="cpf"
                   value={user.cpf}
-                  onChange={handleChange}
                   className="form-control"
-                  required
+                  readOnly // Define o campo como não editável
                 />
               </div>
               <div className="mb-3">
-                <label htmlFor="email" className="form-label">E-mail:</label> {/* Campo de e-mail */}
+                <label htmlFor="email" className="form-label">E-mail:</label>
                 <input
                   type="email"
                   id="email"

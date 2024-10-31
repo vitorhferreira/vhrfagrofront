@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { parseCookies } from "nookies";
 import { redirect } from "next/navigation";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faSyringe, faFileInvoiceDollar, faDrumstickBite, faCashRegister, faChartBar, faUserCog, faUser } from '@fortawesome/free-solid-svg-icons'; // Importando o ícone de usuário
+import { faBox, faSyringe, faFileInvoiceDollar, faDrumstickBite, faExclamationTriangle, faCashRegister, faChartBar, faUserCog, faUser } from '@fortawesome/free-solid-svg-icons'; // Importando o ícone de usuário
 
 interface IProps {
     children: React.ReactNode;
@@ -72,7 +72,7 @@ export const LayoutDashboard = (props: IProps) => {
                                 </li>
                                 <li className="nav-item mb-3">
                                     <a className="nav-link" href={'/percas'}>
-                                        <FontAwesomeIcon icon={faFileInvoiceDollar} size="lg" style={{ marginRight: '10px' }} />
+                                        <FontAwesomeIcon icon={faExclamationTriangle} size="lg" style={{ marginRight: '10px' }} /> {/* Ícone de alerta */}
                                         Percas
                                     </a>
                                 </li>

@@ -1,3 +1,4 @@
+// src/app/consumo_racao/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react';
@@ -26,12 +27,23 @@ interface Lote {
   data_compra: string;
 }
 
+// Função para formatar o valor estimado como moeda
+const formatarValorEstimado = (valor: string) => {
+  const numero = valor.replace(/\D/g, ""); // Remove caracteres não numéricos
+  const numeroFormatado = (Number(numero) / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+  return numeroFormatado;
+};
+
 // Componente para o formulário de cadastro de consumo de ração
 const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { onConsumoRacaoCriada: () => void, consumoRacaoEdit?: ConsumoRacao }) => {
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ConsumoRacao>();
   const [loading, setLoading] = useState(false);
   const [loteOption, setLoteOption] = useState<Lote[]>([]);
   const [selectedLote, setSelectedLote] = useState<string>("");
+  const [valorEstimado, setValorEstimado] = useState<string>("");
 
   useEffect(() => {
     const fetchLotes = async () => {
@@ -49,7 +61,7 @@ const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { 
     if (consumoRacaoEdit) {
       setValue('tipo_racao', consumoRacaoEdit.tipo_racao);
       setValue('quantidade_kg', consumoRacaoEdit.quantidade_kg);
-      setValue('valor_estimado', consumoRacaoEdit.valor_estimado);
+      setValorEstimado(formatarValorEstimado(consumoRacaoEdit.valor_estimado)); // Define valor formatado
       setValue('data_inicial', consumoRacaoEdit.data_inicial);
       setValue('data_final', consumoRacaoEdit.data_final);
     } else {
@@ -58,19 +70,35 @@ const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { 
     }
   }, [consumoRacaoEdit, setValue, reset]);
 
+  const handleValorEstimadoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor = e.target.value;
+    const valorFormatado = formatarValorEstimado(valor);
+    setValorEstimado(valorFormatado);
+    setValue("valor_estimado", valorFormatado); // Atualiza valor formatado no formulário
+  };
+
+  const limparFormatacaoValor = (valor: string) => {
+    return valor.replace(/[^\d,]/g, "").replace(",", "."); // Remove 'R$' e separadores de milhar
+  };
+
   // Função para submeter o formulário
   const onSubmit = async (data: ConsumoRacao) => {
     setLoading(true);
     try {
+      const dadosLimpos = {
+        ...data,
+        valor_estimado: limparFormatacaoValor(valorEstimado),
+      };
+
       if (consumoRacaoEdit) {
-        await axios.put(`http://127.0.0.1:8000/api/consumo_racao/${consumoRacaoEdit.id}`, data);
+        await axios.put(`http://127.0.0.1:8000/api/consumo_racao/${consumoRacaoEdit.id}`, dadosLimpos);
         toast.success('Consumo de ração atualizado com sucesso!');
         onConsumoRacaoCriada();
       } else {
-        await axios.post('http://127.0.0.1:8000/api/cadconsumo_racao', data);
+        await axios.post('http://127.0.0.1:8000/api/cadconsumo_racao', dadosLimpos);
         toast.success('Consumo de ração cadastrado com sucesso!');
-        onConsumoRacaoCriada(); // Atualiza a lista após cadastrar
-        reset(); // Limpa o formulário
+        onConsumoRacaoCriada();
+        reset();
       }
     } catch (error) {
       console.error('Erro ao cadastrar consumo de ração:', error);
@@ -108,13 +136,11 @@ const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { 
       <div className="mb-3">
         <label htmlFor="valor_estimado" className="form-label">Valor Estimado:</label>
         <input 
-          type="number" 
+          type="text" 
           className="form-control" 
           id="valor_estimado" 
-          {...register('valor_estimado', { 
-            required: 'O valor estimado é obrigatório',
-            min: { value: 1, message: 'O valor estimado deve ser maior que 0' }
-          })} 
+          value={valorEstimado} 
+          onChange={handleValorEstimadoChange} 
         />
         {errors.valor_estimado && <div className="text-danger">{errors.valor_estimado.message}</div>}
       </div>

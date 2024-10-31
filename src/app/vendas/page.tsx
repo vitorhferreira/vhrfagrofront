@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
 import { LayoutDashboard } from '@/components/LayoutDashboard';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
 
 // Interface para os dados da venda
 interface Venda {
@@ -18,8 +18,8 @@ interface Venda {
   quantidade_vendida: string;
   prazo_pagamento: string;
   data_compra: string;
-  recebido: boolean; // Adicionado para controlar o status de recebimento
-  documento?: string; // Novo campo para o documento
+  recebido: boolean;
+  documento?: string;
 }
 
 interface Lote {
@@ -28,17 +28,44 @@ interface Lote {
   quantidade: number;
 }
 
+// Função de formatação do CPF/CNPJ
+const formatarCpfCnpj = (valor: string) => {
+  valor = valor.replace(/\D/g, ''); // Remove tudo que não for dígito
+  if (valor.length <= 11) {
+    valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+    valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+    valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  } else {
+    valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
+    valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+    valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
+    valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
+  }
+  return valor;
+};
+
+// Função de formatação de valor em reais
+const formatarValor = (valor: string) => {
+  valor = valor.replace(/\D/g, '');
+  valor = (Number(valor) / 100).toFixed(2) + '';
+  valor = valor.replace('.', ',');
+  valor = valor.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+  return `R$ ${valor}`;
+};
+
 // Componente para o formulário de cadastro de venda
 const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => void, vendaEdit?: Venda }) => {
-  const { register, handleSubmit, reset, setValue, watch } = useForm<Venda>();
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<Venda>();
   const [loading, setLoading] = useState(false);
   const [loteOption, setLoteOption] = useState<Lote[]>([]);
-  const [selectedLote, setSelectedLote] = useState<string>('');
   const [quantidadeDisponivel, setQuantidadeDisponivel] = useState<number | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false); // Controle do modal de erro
+  const [errorMessage, setErrorMessage] = useState(''); // Mensagem de erro
   const quantidadeVendida = watch('quantidade_vendida');
-  const valorUnitario = watch('valor_unitario');
   const pesoMedioVenda = watch('peso_medio_venda');
   const prazoPagamento = watch('prazo_pagamento');
+  const cpfCnpjComprador = watch('cpf_cnpj_comprador');
+  const valorUnitario = watch('valor_unitario');
 
   // Carregar os lotes ao montar o componente
   useEffect(() => {
@@ -64,7 +91,6 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
       setValue('prazo_pagamento', vendaEdit.prazo_pagamento);
       setValue('data_compra', vendaEdit.data_compra);
       setValue('documento', vendaEdit.documento);
-      handleLoteChange({ target: { value: vendaEdit.numero_lote } } as any);
     } else {
       reset();
     }
@@ -72,15 +98,13 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
 
   const handleLoteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const loteSelecionado = event.target.value;
-    setSelectedLote(loteSelecionado);
-    setValue('numero_lote', loteSelecionado);
-
     const lote = loteOption.find(l => l.numero_lote === loteSelecionado);
     if (lote) {
       setQuantidadeDisponivel(lote.quantidade);
     } else {
       setQuantidadeDisponivel(null);
     }
+    setValue('numero_lote', loteSelecionado);
   };
 
   const isQuantidadeValida = () => {
@@ -91,7 +115,7 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
   };
 
   const isValorValido = () => {
-    return Number(valorUnitario) > 0 && Number(pesoMedioVenda) > 0 && Number(prazoPagamento) > 0;
+    return pesoMedioVenda > 0 && prazoPagamento > 0;
   };
 
   const onSubmit = async (data: Venda) => {
@@ -101,7 +125,7 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
     }
 
     if (!isValorValido()) {
-      toast.error(`O valor, peso ou prazo de pagamento devem ser maiores que zero.`);
+      toast.error(`O peso ou prazo de pagamento devem ser maiores que zero.`);
       return;
     }
 
@@ -119,18 +143,16 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
       formData.append('peso_medio_venda', data.peso_medio_venda);
       formData.append('comprador', data.comprador);
       formData.append('cpf_cnpj_comprador', data.cpf_cnpj_comprador);
-      formData.append('valor_unitario', data.valor_unitario);
+      formData.append('valor_unitario', valorUnitario.replace('R$ ', '').replace(/\./g, '').replace(',', '.'));
       formData.append('quantidade_vendida', data.quantidade_vendida);
       formData.append('prazo_pagamento', data.prazo_pagamento);
       formData.append('data_compra', data.data_compra);
 
-      // Anexa o documento, se presente
       const documento = watch('documento');
       if (documento && documento.length > 0) {
         formData.append('documento', documento[0]);
       }
 
-      // Cadastra a venda
       if (vendaEdit) {
         await axios.post(`http://127.0.0.1:8000/api/vendas/${vendaEdit.id}`, formData, {
           headers: {
@@ -149,101 +171,141 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
 
       onVendaCriada();
       reset();
-      window.location.reload(); // Atualiza a página
-    } catch (error) {
-      console.error('Erro ao cadastrar venda:', error);
-      toast.error('Erro ao cadastrar venda. Verifique os campos e tente novamente.');
+    } catch (error: any) {
+      if (error.response && error.response.status === 422) {
+        const backendError = error.response.data.error;
+        if (backendError === 'CPF/CNPJ do comprador inválido') {
+          setErrorMessage(backendError);
+          setShowErrorModal(true);
+        }
+      } else {
+        toast.error('Erro ao cadastrar venda. Verifique os campos e tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="mb-3">
-        <label htmlFor="numero_lote" className="form-label">Número do Lote:</label>
-        <select className="form-control" id="numero_lote" {...register('numero_lote', { required: true })} onChange={handleLoteChange}>
-          <option value="">Selecione o lote</option>
-          {loteOption.map((lote) => (
-            <option key={lote.id} value={lote.numero_lote}>
-              {`${lote.numero_lote} - ${lote.quantidade} cabeças disponíveis`}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="mb-3">
-        <label htmlFor="peso_medio_venda" className="form-label">Peso Médio de Venda (Kg):</label>
-        <input 
-          type="number" 
-          className="form-control" 
-          id="peso_medio_venda" 
-          {...register('peso_medio_venda', { required: true, min: 1 })} 
-        />
-        {pesoMedioVenda <= 0 && (
-          <div className="text-danger">Peso deve ser maior que 0.</div>
-        )}
-      </div>
-      <div className="mb-3">
-        <label htmlFor="comprador" className="form-label">Comprador:</label>
-        <input type="text" className="form-control" id="comprador" {...register('comprador', { required: true })} />
-      </div>
-      <div className="mb-3">
-        <label htmlFor="cpf_cnpj_comprador" className="form-label">CPF/CNPJ do Comprador:</label>
-        <input type="text" className="form-control" id="cpf_cnpj_comprador" {...register('cpf_cnpj_comprador', { required: true })} />
-      </div>
-      <div className="mb-3">
-        <label htmlFor="valor_unitario" className="form-label">Valor Unitário (R$):</label>
-        <input 
-          type="number" 
-          className="form-control" 
-          id="valor_unitario" 
-          {...register('valor_unitario', { required: true, min: 1 })} 
-        />
-        {valorUnitario <= 0 && (
-          <div className="text-danger">Valor deve ser maior que 0.</div>
-        )}
-      </div>
-      <div className="mb-3">
-        <label htmlFor="quantidade_vendida" className="form-label">Quantidade Vendida:</label>
-        <input
-          type="number"
-          className="form-control"
-          id="quantidade_vendida"
-          {...register('quantidade_vendida', { required: true, min: 1 })}
-          style={{ borderColor: !isQuantidadeValida() ? 'red' : undefined }}
-        />
-        {!isQuantidadeValida() && (
-          <div className="text-danger">
-            Quantidade excede a quantidade disponível no lote ({quantidadeDisponivel} cabeças disponíveis).
+    <>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="mb-3">
+          <label htmlFor="numero_lote" className="form-label">Número do Lote:</label>
+          <select
+            className="form-control"
+            id="numero_lote"
+            {...register('numero_lote', { required: true })}
+            onChange={handleLoteChange}
+          >
+            <option value="">Selecione o lote</option>
+            {loteOption.map((lote) => (
+              <option key={lote.id} value={lote.numero_lote}>
+                {`${lote.numero_lote} - ${lote.quantidade} cabeças disponíveis`}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="mb-3">
+          <label htmlFor="peso_medio_venda" className="form-label">Peso Médio de Venda (Kg):</label>
+          <input 
+            type="number" 
+            className="form-control" 
+            id="peso_medio_venda" 
+            {...register('peso_medio_venda', { required: true, min: 1 })} 
+          />
+          {pesoMedioVenda <= 0 && (
+            <div className="text-danger">Peso deve ser maior que 0.</div>
+          )}
+        </div>
+        <div className="mb-3">
+          <label htmlFor="comprador" className="form-label">Comprador:</label>
+          <input type="text" className="form-control" id="comprador" {...register('comprador', { required: true })} />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="cpf_cnpj_comprador" className="form-label">CPF/CNPJ do Comprador:</label>
+          <input 
+            type="text" 
+            className="form-control" 
+            id="cpf_cnpj_comprador" 
+            {...register('cpf_cnpj_comprador', { required: true })} 
+            value={cpfCnpjComprador ? formatarCpfCnpj(cpfCnpjComprador) : ''} 
+            onChange={(e) => setValue('cpf_cnpj_comprador', formatarCpfCnpj(e.target.value))}
+          />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="valor_unitario" className="form-label">Valor Unitário (R$):</label>
+          <input 
+            type="text" 
+            className="form-control" 
+            id="valor_unitario" 
+            {...register('valor_unitario', { required: true })} 
+            value={valorUnitario ? formatarValor(valorUnitario) : ''} 
+            onChange={(e) => setValue('valor_unitario', formatarValor(e.target.value))}
+          />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="quantidade_vendida" className="form-label">Quantidade Vendida:</label>
+          <input
+            type="number"
+            className="form-control"
+            id="quantidade_vendida"
+            {...register('quantidade_vendida', { required: true, min: 1 })}
+            style={{ borderColor: !isQuantidadeValida() ? 'red' : undefined }}
+          />
+          {!isQuantidadeValida() && (
+            <div className="text-danger">
+              Quantidade excede a quantidade disponível no lote ({quantidadeDisponivel} cabeças disponíveis).
+            </div>
+          )}
+        </div>
+        <div className="mb-3">
+          <label htmlFor="prazo_pagamento" className="form-label">Prazo de Pagamento (dias):</label>
+          <input 
+            type="number" 
+            className="form-control" 
+            id="prazo_pagamento" 
+            {...register('prazo_pagamento', { required: true, min: 1 })} 
+          />
+          {prazoPagamento <= 0 && (
+            <div className="text-danger">Prazo de pagamento deve ser maior que 0.</div>
+          )}
+        </div>
+        <div className="mb-3">
+          <label htmlFor="data_compra" className="form-label">Data da Compra:</label>
+          <input type="date" className="form-control" id="data_compra" {...register('data_compra', { required: true })} />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="documento" className="form-label">Documento (Opcional):</label>
+          <input type="file" className="form-control" id="documento" {...register('documento')} />
+        </div>
+        <button type="submit" className="btn btn-primary" disabled={loading || !isQuantidadeValida() || !isValorValido()}>
+          {loading ? 'Salvando...' : 'Salvar'}
+        </button>
+      </form>
+
+      {/* Modal de erro */}
+      {showErrorModal && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Erro</h5>
+                <button type="button" className="btn-close" onClick={() => setShowErrorModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p>{errorMessage}</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowErrorModal(false)}>Fechar</button>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-      <div className="mb-3">
-        <label htmlFor="prazo_pagamento" className="form-label">Prazo de Pagamento (dias):</label>
-        <input 
-          type="number" 
-          className="form-control" 
-          id="prazo_pagamento" 
-          {...register('prazo_pagamento', { required: true, min: 1 })} 
-        />
-        {prazoPagamento <= 0 && (
-          <div className="text-danger">Prazo de pagamento deve ser maior que 0.</div>
-        )}
-      </div>
-      <div className="mb-3">
-        <label htmlFor="data_compra" className="form-label">Data da Compra:</label>
-        <input type="date" className="form-control" id="data_compra" {...register('data_compra', { required: true })} />
-      </div>
-      <div className="mb-3">
-        <label htmlFor="documento" className="form-label">Documento (Opcional):</label>
-        <input type="file" className="form-control" id="documento" {...register('documento')} />
-      </div>
-      <button type="submit" className="btn btn-primary" disabled={loading || !isQuantidadeValida() || !isValorValido()}>
-        {loading ? 'Salvando...' : 'Salvar'}
-      </button>
-    </form>
+        </div>
+      )}
+    </>
   );
 };
+
 
 // Função para verificar se a venda está em atraso
 const verificarAtraso = (dataCompra: string, prazoPagamento: string) => {
@@ -270,7 +332,6 @@ const ListaVendas = ({ vendas, onVendaEdit, onVendaCriada }: { vendas: Venda[], 
       try {
         await axios.delete(`http://127.0.0.1:8000/api/vendas/${vendaToDelete.id}`);
         toast.success('Venda excluída com sucesso.');
-        window.location.reload(); // Atualiza a página
         onVendaCriada();
       } catch (error) {
         toast.error('Erro ao excluir venda.');
@@ -289,7 +350,6 @@ const ListaVendas = ({ vendas, onVendaEdit, onVendaCriada }: { vendas: Venda[], 
       const response = await axios.put(url);
       if (response.data.sucesso) {
         toast.success('Status de recebimento atualizado com sucesso');
-        window.location.reload(); // Atualiza a página
         onVendaCriada();
       } else {
         toast.error('Erro ao atualizar status de recebimento');
