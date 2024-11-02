@@ -1,5 +1,4 @@
-// src/app/users/page.tsx
-'use client'
+'use client';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -13,18 +12,17 @@ interface User {
     cpf: string;
     email: string;
     idade: number;
+    tipo_usuario: string; // Novo campo para tipo de usuário
 }
 
 // Função de formatação de CPF/CNPJ
 const formatarCpfCnpj = (valor: string) => {
     valor = valor.replace(/\D/g, ''); // Remove tudo que não for dígito
     if (valor.length <= 11) {
-        // CPF
         valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
         valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
         valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     } else {
-        // CNPJ
         valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
         valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
         valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
@@ -105,13 +103,14 @@ const Users = () => {
                                             <th>Nome</th>
                                             <th>CPF/CNPJ</th>
                                             <th>Email</th>
+                                            <th>Tipo de Usuário</th>
                                             <th>Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {users.map(user => (
                                             <tr key={user.id}>
-                                                <td>{user.nome}</td><td>{formatarCpfCnpj(user.cpf)}</td><td>{user.email}</td>
+                                                <td>{user.nome}</td><td>{formatarCpfCnpj(user.cpf)}</td><td>{user.email}</td><td>{user.tipo_usuario}</td>
                                                 <td>
                                                     <button className='btn btn-outline-primary me-2' onClick={() => router.push(`/editaruser?id=${user.id}`)}>
                                                         Editar

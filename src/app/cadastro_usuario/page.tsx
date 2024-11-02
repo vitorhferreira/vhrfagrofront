@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { LayoutDashboard } from '@/components/LayoutDashboard';
 import { toast } from 'react-toastify';
 import { useForm } from 'react-hook-form';
-import 'bootstrap-icons/font/bootstrap-icons.css'; // Importar ícones do Bootstrap
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // Interface para os dados do usuário
 interface Usuario {
@@ -15,37 +15,33 @@ interface Usuario {
   email: string;
   senha: string;
   confirmarSenha: string;
+  tipo_usuario: string; // Novo campo para o tipo de usuário
 }
 
 const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void }) => {
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<Usuario>();
   const [loading, setLoading] = useState(false);
-  const [cpfCnpj, setCpfCnpj] = useState(''); // Estado para o CPF/CNPJ
+  const [cpfCnpj, setCpfCnpj] = useState('');
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [confirmarSenhaVisivel, setConfirmarSenhaVisivel] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false); // Modal de erro
-  const [errorMessage, setErrorMessage] = useState(''); // Mensagem de erro
-  const senha = watch('senha'); // Observar o campo de senha
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const senha = watch('senha');
 
-  // Função de validação de senha
   const senhaValida = (senha: string) => {
     const regex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/;
     return regex.test(senha);
   };
 
-  // Função para remover a máscara antes de enviar ao backend
   const removerMascara = (valor: string) => valor.replace(/\D/g, '');
 
-  // Função de formatação do CPF/CNPJ para exibir no frontend
   const formatarCpfCnpj = (valor: string) => {
-    valor = valor.replace(/\D/g, ''); // Remove tudo que não for dígito
+    valor = valor.replace(/\D/g, '');
     if (valor.length <= 11) {
-      // CPF
       valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
       valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
       valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     } else {
-      // CNPJ
       valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
       valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
       valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
@@ -54,28 +50,24 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
     return valor;
   };
 
-  // Função de submissão do formulário
   const onSubmit = async (data: Usuario) => {
     setLoading(true);
     try {
-      const { confirmarSenha, cpfCnpj, ...userData } = data; // Remove "confirmarSenha" antes de enviar
-      const cpfCnpjSemMascara = removerMascara(cpfCnpj); // Remove a máscara do CPF/CNPJ
+      const { confirmarSenha, cpfCnpj, ...userData } = data;
+      const cpfCnpjSemMascara = removerMascara(cpfCnpj);
 
-      // Envia os dados para o backend com o CPF/CNPJ sem máscara
       const response = await axios.post('http://127.0.0.1:8000/api/caduser', {
         ...userData,
-        cpf: cpfCnpjSemMascara, // Envia como 'cpf' para o backend
+        cpf: cpfCnpjSemMascara,
       });
 
-      // Caso de sucesso
       toast.success('Usuário cadastrado com sucesso!');
       onUsuarioCadastrado();
-      reset(); // Limpa o formulário
-      setCpfCnpj(''); // Reseta o campo de CPF/CNPJ
+      reset();
+      setCpfCnpj('');
     } catch (error: any) {
       let mensagemErro = '';
 
-      // Verificando erros de validação do CPF/CNPJ e email
       if (error.response && error.response.status === 422) {
         const backendError = error.response.data.error;
 
@@ -91,10 +83,7 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
         if (validationErrors?.cpf) {
           mensagemErro += 'CPF/CNPJ já cadastrado. ';
         }
-
-      }
-      // Verifica se o erro é de CPF ou email já cadastrados (status 409)
-      else if (error.response && error.response.status === 409) {
+      } else if (error.response && error.response.status === 409) {
         const { cpfExistente, emailExistente } = error.response.data;
 
         if (cpfExistente && emailExistente) {
@@ -104,9 +93,7 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
         } else if (emailExistente) {
           mensagemErro = 'E-mail já está cadastrado.';
         }
-      }
-      // Outros erros
-      else {
+      } else {
         mensagemErro = 'Erro ao cadastrar usuário. Verifique os campos e tente novamente.';
       }
 
@@ -137,9 +124,9 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
             type="text"
             className="form-control"
             id="cpfCnpj"
-            value={cpfCnpj} // Usa o estado para o valor do campo
+            value={cpfCnpj}
             {...register('cpfCnpj', { required: 'CPF ou CNPJ é obrigatório' })}
-            onChange={(e) => setCpfCnpj(formatarCpfCnpj(e.target.value))} // Atualiza o estado e aplica a máscara
+            onChange={(e) => setCpfCnpj(formatarCpfCnpj(e.target.value))}
           />
           {errors.cpfCnpj && <span className="text-danger">{errors.cpfCnpj.message}</span>}
         </div>
@@ -153,6 +140,20 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
             {...register('email', { required: 'E-mail é obrigatório' })}
           />
           {errors.email && <span className="text-danger">{errors.email.message}</span>}
+        </div>
+
+        <div className="mb-3">
+          <label htmlFor="tipo_usuario" className="form-label">Tipo de Usuário</label>
+          <select
+            className="form-select"
+            id="tipo_usuario"
+            {...register('tipo_usuario', { required: 'Tipo de usuário é obrigatório' })}
+          >
+            <option value="">Selecione o tipo de usuário</option>
+            <option value="funcionario">Funcionário</option>
+            <option value="admin">Admin</option>
+          </select>
+          {errors.tipo_usuario && <span className="text-danger">{errors.tipo_usuario.message}</span>}
         </div>
 
         <div className="mb-3">
@@ -208,7 +209,6 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
         </div>
       </form>
 
-      {/* Modal de erro */}
       {showErrorModal && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
           <div className="modal-dialog">

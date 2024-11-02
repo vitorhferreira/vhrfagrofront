@@ -49,25 +49,39 @@ const Login = () => {
     // Função de login
     const submitForm = useCallback((e: SyntheticEvent) => {
         e.preventDefault();
-
+    
         if (refForm.current.checkValidity()) {
             setLoading(true);
-
+    
             const target = e.target as typeof e.target & {
-                cpf: { value: string };
                 senha: { value: string };
             };
-
+    
             // Remover a máscara antes de enviar o CPF ao backend
             const cpfCnpjSemMascara = removerMascara(cpfCnpj);
-
+    
             axios.post('http://127.0.0.1:8000/api/login', {
                 cpf: cpfCnpjSemMascara,
                 senha: target.senha.value,
             })
                 .then((resposta) => {
-                    setCookie(undefined, 'logado', 'true');
-                    router.push('/dashboard');
+                    // Configura os cookies logado e userId com base na resposta do backend
+                    const { id, tipo_usuario } = resposta.data.user;
+    
+                    setCookie(null, 'logado', 'true', {
+                        maxAge: 30 * 24 * 60 * 60,
+                        path: '/',
+                    });
+                    setCookie(null, 'userId', id, {
+                        maxAge: 30 * 24 * 60 * 60,
+                        path: '/',
+                    });
+                    setCookie(null, 'tipo_usuario', tipo_usuario, {
+                        maxAge: 30 * 24 * 60 * 60,
+                        path: '/',
+                    });
+    
+                    router.push('/dashboard'); // Redireciona após login
                     setLoading(false);
                 })
                 .catch((err) => {

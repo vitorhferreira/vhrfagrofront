@@ -1,106 +1,151 @@
-'use client'
+'use client';
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
 import { LayoutDashboard } from '@/components/LayoutDashboard';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
+import { FaCheck } from 'react-icons/fa';
 
-// Interface para os dados da vacina e do lote
+// Interfaces
 interface Vacina {
   id?: number;
   nome_vacina: string;
   data_aplicacao: string;
   quantidade_cabecas: number;
   numero_lote: string;
+  numero_identificacao?: string;
 }
 
 interface Lote {
   id: number;
   quantidade: number;
-  peso: number;
-  valor_individual: string;
-  idade_media: string;
-  data_compra: string;
   numero_lote: number;
 }
 
-// Componente para o formulário de cadastro de vacina
+interface Animal {
+  id: number;
+  numero_identificacao: string;
+  id_lote: number;
+}
+
 const CadastroVacinaForm = ({ onVacinaCriada, vacinaEdit }: { onVacinaCriada: () => void, vacinaEdit?: Vacina }) => {
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<Vacina>();
   const [loading, setLoading] = useState(false);
   const [loteOption, setLoteOption] = useState<Lote[]>([]);
-  const [selectedLote, setSelectedLote] = useState<string>("");
-  const [quantidadeDisponivel, setQuantidadeDisponivel] = useState<number | null>(null);
-  const quantidadeCabecas = watch('quantidade_cabecas'); // Obter o valor do campo de quantidade de cabeças
+  const [animalOption, setAnimalOption] = useState<Animal[]>([]);
+  const [filteredAnimals, setFilteredAnimals] = useState<string[]>([]);
+  const [selectedLoteId, setSelectedLoteId] = useState<number | null>(null);
+  const [selectedAnimals, setSelectedAnimals] = useState<string[]>([]);
+  const [isAnimalListOpen, setIsAnimalListOpen] = useState(false);
 
-  // Buscar lotes disponíveis
+  const quantidadeCabecas = watch('quantidade_cabecas');
+
   useEffect(() => {
     const fetchLotes = async () => {
       try {
         const response = await axios.get('http://127.0.0.1:8000/api/lote');
         setLoteOption(response.data);
-      } catch (error: any) {
+      } catch {
         toast.error('Erro ao buscar lotes');
       }
     };
+
+    const fetchAnimals = async () => {
+      try {
+        const response = await axios.get(`http://127.0.0.1:8000/api/animal?timestamp=${new Date().getTime()}`);
+        setAnimalOption(response.data);
+      } catch {
+        toast.error('Erro ao buscar animais');
+      }
+    };
+
     fetchLotes();
+    fetchAnimals();
   }, []);
 
-  // Preencher os campos ao editar
   useEffect(() => {
     if (vacinaEdit) {
       setValue('nome_vacina', vacinaEdit.nome_vacina);
       setValue('data_aplicacao', vacinaEdit.data_aplicacao);
       setValue('quantidade_cabecas', vacinaEdit.quantidade_cabecas);
-      setSelectedLote(vacinaEdit.numero_lote);
+      setSelectedLoteId(Number(vacinaEdit.numero_lote)); 
       setValue('numero_lote', vacinaEdit.numero_lote);
+      setSelectedAnimals(vacinaEdit.numero_identificacao ? vacinaEdit.numero_identificacao.split(',') : []);
+      setValue('numero_identificacao', vacinaEdit.numero_identificacao || "");
     } else {
       reset();
     }
   }, [vacinaEdit, setValue, reset]);
 
-  // Função para verificar a quantidade disponível ao selecionar um lote
   const handleLoteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const loteSelecionado = event.target.value;
-    setSelectedLote(loteSelecionado);
-    setValue('numero_lote', loteSelecionado);
+    const selectedLote = loteOption.find(lote => lote.numero_lote.toString() === loteSelecionado);
+    
+    if (selectedLote) {
+      setSelectedLoteId(selectedLote.id);
+      setValue('numero_lote', selectedLote.numero_lote.toString());
 
-    const lote = loteOption.find(l => l.numero_lote === loteSelecionado);
-    if (lote) {
-      setQuantidadeDisponivel(lote.quantidade);
-    } else {
-      setQuantidadeDisponivel(null);
+      const uniqueAnimals = Array.from(
+        new Set(
+          animalOption
+            .filter(animal => animal.id_lote === selectedLote.id)
+            .map(animal => animal.numero_identificacao)
+        )
+      );
+
+      setFilteredAnimals(uniqueAnimals);
+      setSelectedAnimals([]);
     }
   };
 
-  // Função para verificar se a quantidade de cabeças está disponível no lote selecionado
+  const toggleAnimalList = () => {
+    setIsAnimalListOpen(!isAnimalListOpen);
+  };
+
+  const handleAnimalSelection = (numero_identificacao: string) => {
+    setSelectedAnimals(prevSelected => {
+      const updatedSelection = prevSelected.includes(numero_identificacao)
+        ? prevSelected.filter(animal => animal !== numero_identificacao)
+        : [...prevSelected, numero_identificacao];
+      setValue('numero_identificacao', updatedSelection.join(','));
+      return updatedSelection;
+    });
+  };
+
   const isQuantidadeValida = () => {
-    if (quantidadeDisponivel !== null && quantidadeCabecas !== undefined) {
-      return quantidadeCabecas > 0 && quantidadeCabecas <= quantidadeDisponivel;
-    }
-    return true; // Se não houver lote selecionado, considerar válido
+    return quantidadeCabecas && quantidadeCabecas > 0;
   };
 
-  // Função para submeter o formulário
   const onSubmit = async (data: Vacina) => {
     if (!isQuantidadeValida()) {
-      toast.error(`A quantidade de cabeças não pode exceder a quantidade disponível no lote (${quantidadeDisponivel}).`);
+      toast.error('A quantidade de cabeças deve ser maior que 0.');
       return;
     }
+
+    if (selectedAnimals.length === 0) {
+      toast.error('É necessário selecionar pelo menos um animal.');
+      return;
+    }
+
+    const payload = {
+      ...data,
+      numero_lote: selectedLoteId,
+      numero_identificacao: selectedAnimals.join(','),
+    };
 
     setLoading(true);
     try {
       if (vacinaEdit) {
-        await axios.put(`http://127.0.0.1:8000/api/vacinas/${vacinaEdit.id}`, data);
+        await axios.put(`http://127.0.0.1:8000/api/vacinas/${vacinaEdit.id}`, payload);
         toast.success('Vacina atualizada com sucesso!');
         onVacinaCriada();
       } else {
-        await axios.post('http://127.0.0.1:8000/api/cadvacinas', data);
+        await axios.post('http://127.0.0.1:8000/api/cadvacinas', payload);
         toast.success('Vacina cadastrada com sucesso!');
         onVacinaCriada();
-        reset(); // Limpa o formulário
+        reset();
+        setSelectedAnimals([]);
       }
     } catch (error) {
       console.error('Erro ao cadastrar vacina:', error);
@@ -108,6 +153,11 @@ const CadastroVacinaForm = ({ onVacinaCriada, vacinaEdit }: { onVacinaCriada: ()
     } finally {
       setLoading(false);
     }
+  };
+
+  const selectAllAnimals = () => {
+    setSelectedAnimals(filteredAnimals);
+    setValue('numero_identificacao', filteredAnimals.join(','));
   };
 
   return (
@@ -128,47 +178,88 @@ const CadastroVacinaForm = ({ onVacinaCriada, vacinaEdit }: { onVacinaCriada: ()
           type="number"
           className="form-control"
           id="quantidade_cabecas"
-          {...register('quantidade_cabecas', {
-            required: 'A quantidade é obrigatória',
-            min: { value: 1, message: 'A quantidade deve ser maior que 0.' }
-          })}
+          {...register('quantidade_cabecas', { required: true, min: 1 })}
           style={{ borderColor: errors.quantidade_cabecas ? 'red' : undefined }}
         />
         {errors.quantidade_cabecas && (
-          <div className="text-danger">
-            {errors.quantidade_cabecas.message}
-          </div>
-        )}
-        {!isQuantidadeValida() && (
-          <div className="text-danger">
-            Quantidade excede a quantidade disponível no lote ({quantidadeDisponivel} cabeças disponíveis).
-          </div>
+          <div className="text-danger">{errors.quantidade_cabecas.message}</div>
         )}
       </div>
 
       <div className="mb-3">
         <label htmlFor="lote" className="form-label">Lote</label>
-        <select className="form-select" name="lote" value={selectedLote} onChange={handleLoteChange}>
+        <select className="form-select" name="lote" onChange={handleLoteChange} required>
           <option value="">Selecione um Lote</option>
           {loteOption.map(lote => (
-            <option key={lote.id} value={lote.numero_lote}>
+            <option key={lote.id} value={lote.numero_lote.toString()}>
               {`${lote.numero_lote} - ${lote.quantidade} cabeças disponíveis`}
             </option>
           ))}
         </select>
       </div>
-      <button type="submit" className="btn btn-primary" disabled={loading || !isQuantidadeValida()}>
+
+      {selectedLoteId && (
+        <div className="mb-3 position-relative text-center">
+          <label htmlFor="animal" className="form-label">Animal</label>
+          <button
+            type="button"
+            className="form-control"
+            onClick={toggleAnimalList}
+          >
+            {selectedAnimals.length > 0
+              ? `${selectedAnimals.length} animal(is) selecionado(s)`
+              : 'Selecione os animais'}
+          </button>
+
+          {isAnimalListOpen && (
+            <div className="animal-list bg-white border rounded shadow-sm p-3 mt-2">
+              <button
+                type="button"
+                className="btn btn-outline-secondary mb-2"
+                onClick={selectAllAnimals}
+              >
+                Selecionar Todos
+              </button>
+              {filteredAnimals.map(animal => (
+                <div
+                  key={animal}
+                  className="d-flex align-items-center justify-content-center"
+                  onClick={() => handleAnimalSelection(animal)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <input
+                    type="checkbox"
+                    className="me-2"
+                    checked={selectedAnimals.includes(animal)}
+                    readOnly
+                  />
+                  <span>{animal}</span>
+                  {selectedAnimals.includes(animal) && <FaCheck className="ms-2 text-success" />}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <input
+        type="hidden"
+        {...register('numero_identificacao')}
+        value={selectedAnimals.join(',')}
+      />
+
+      <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? 'Salvando...' : 'Salvar'}
       </button>
     </form>
   );
 };
 
-// Componente para listar as vacinas
+// Lista de Vacinas
 const ListaVacinas = ({ vacinas, onVacinaEdit, onVacinaCriada }: { vacinas: Vacina[], onVacinaEdit: (vacina: Vacina) => void, onVacinaCriada: () => void }) => {
   const [filteredVacinas, setFilteredVacinas] = useState<Vacina[]>(vacinas);
-  const [showModal, setShowModal] = useState(false); // Controla a visibilidade do modal
-  const [vacinaToDelete, setVacinaToDelete] = useState<Vacina | null>(null); // Vacina a ser excluída
+  const [showModal, setShowModal] = useState(false);
+  const [vacinaToDelete, setVacinaToDelete] = useState<Vacina | null>(null);
 
   useEffect(() => {
     setFilteredVacinas(vacinas);
@@ -176,7 +267,7 @@ const ListaVacinas = ({ vacinas, onVacinaEdit, onVacinaCriada }: { vacinas: Vaci
 
   const handleDeleteConfirmation = (vacina: Vacina) => {
     setVacinaToDelete(vacina);
-    setShowModal(true); // Exibe o modal de confirmação
+    setShowModal(true);
   };
 
   const handleDelete = async () => {
@@ -187,13 +278,13 @@ const ListaVacinas = ({ vacinas, onVacinaEdit, onVacinaCriada }: { vacinas: Vaci
           toast.success('Vacina deletada com sucesso');
           onVacinaCriada();
         } else {
-          toast.error('Erro ao deletar Vacina');
+          toast.error('Erro ao deletar vacina');
         }
       } catch (error) {
-        toast.error('Erro ao deletar Vacina');
+        toast.error('Erro ao deletar vacina');
       } finally {
-        setShowModal(false); // Fecha o modal após a ação
-        setVacinaToDelete(null); // Limpa a vacina a ser excluída
+        setShowModal(false);
+        setVacinaToDelete(null);
       }
     }
   };
@@ -209,7 +300,11 @@ const ListaVacinas = ({ vacinas, onVacinaEdit, onVacinaCriada }: { vacinas: Vaci
   return (
     <div>
       <h2>Lista de Vacinas:</h2>
-      <input placeholder="Filtrar por Numero do lote" className="form-control mb-3" onChange={(e) => filterVacina(e.target.value)} />
+      <input
+        placeholder="Filtrar por Número do lote"
+        className="form-control mb-3"
+        onChange={(e) => filterVacina(e.target.value)}
+      />
       <ul>
         {filteredVacinas.map((vacina) => (
           <li key={vacina.id} style={{ margin: '15px 0', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
@@ -217,15 +312,19 @@ const ListaVacinas = ({ vacinas, onVacinaEdit, onVacinaCriada }: { vacinas: Vaci
             <strong>Nome da Vacina:</strong> {vacina.nome_vacina}<br />
             <strong>Data da Aplicação:</strong> {new Date(vacina.data_aplicacao).toLocaleDateString('pt-BR')}<br />
             <strong>Quantidade de Cabeças:</strong> {vacina.quantidade_cabecas}<br />
+            <strong>Animais:</strong> {vacina.numero_identificacao ? vacina.numero_identificacao.split(',').join(', ') : 'Nenhum'}<br />
             <div className="actions" style={{ marginTop: '10px' }}>
-              <button className='btn btn-primary' style={{ marginRight: '10px', padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: '#007bff', color: '#fff', cursor: 'pointer' }} onClick={() => onVacinaEdit(vacina)}>Editar</button>
-              <button className='btn btn-danger' style={{ padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: '#dc3545', color: '#fff', cursor: 'pointer' }} onClick={() => handleDeleteConfirmation(vacina)}>Excluir</button>
+              <button className="btn btn-primary" style={{ marginRight: '10px' }} onClick={() => onVacinaEdit(vacina)}>
+                Editar
+              </button>
+              <button className="btn btn-danger" onClick={() => handleDeleteConfirmation(vacina)}>
+                Excluir
+              </button>
             </div>
           </li>
         ))}
       </ul>
 
-      {/* Modal de Confirmação de Exclusão */}
       {showModal && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }} tabIndex={-1}>
           <div className="modal-dialog">
@@ -254,7 +353,6 @@ const Dashboard = () => {
   const [vacinas, setVacinas] = useState<Vacina[]>([]);
   const [vacinaEdit, setVacinaEdit] = useState<Vacina | null>(null);
 
-  // Carregar vacinas
   useEffect(() => {
     carregarVacinas();
   }, []);
@@ -270,7 +368,7 @@ const Dashboard = () => {
 
   const handleVacinaCriada = () => {
     carregarVacinas();
-    setVacinaEdit(null); // Limpa a vacina em edição após criar/editar
+    setVacinaEdit(null);
   };
 
   const handleVacinaEdit = (vacina: Vacina) => {
@@ -284,15 +382,11 @@ const Dashboard = () => {
           <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div className="my-4">
               <h2 className="mb-4">Cadastro de Vacinas</h2>
-
-              {/* Formulário de Cadastro */}
               <div className="card mb-4">
                 <div className="card-body">
                   <CadastroVacinaForm onVacinaCriada={handleVacinaCriada} vacinaEdit={vacinaEdit} />
                 </div>
               </div>
-
-              {/* Lista de Vacinas */}
               <div className="card mb-4">
                 <div className="card-body">
                   <ListaVacinas onVacinaEdit={handleVacinaEdit} onVacinaCriada={handleVacinaCriada} vacinas={vacinas} />
@@ -307,3 +401,5 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+             

@@ -1,23 +1,56 @@
 'use client';
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { parseCookies } from "nookies";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faSyringe, faFileInvoiceDollar, faDrumstickBite, faExclamationTriangle, faCashRegister, faChartBar, faUserCog, faUser } from '@fortawesome/free-solid-svg-icons'; // Importando o ícone de usuário
+import { faBox, faSyringe, faFileInvoiceDollar, faDrumstickBite, faExclamationTriangle, faCashRegister, faChartBar, faUserCog, faUser, faCaretDown } from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
 
 interface IProps {
     children: React.ReactNode;
     token: string | undefined;
 }
 
+interface IUser {
+    id: number;
+    nome: string;
+    cpf: string;
+    email: string;
+    tipo_usuario: string;
+}
+
 export const LayoutDashboard = (props: IProps) => {
-    const cookie = parseCookies(undefined, 'logado');
+    const router = useRouter();
+    const cookies = parseCookies();
+    const userId = cookies.userId;
+    const logado = cookies.logado === 'true'; // Verifica se o usuário está logado
+    const [showReports, setShowReports] = useState(false);
+    const [user, setUser] = useState<IUser | null>(null);
 
     useEffect(() => {
-        if (!cookie || cookie.logado !== 'true') {
-            redirect('/login');
+        // Verifica se o usuário está autenticado
+        if (!logado || !userId) {
+            router.push('/login'); // Redireciona para login caso não esteja autenticado
+        } else {
+            // Busca o usuário pelo ID
+            axios.get<IUser>(`http://127.0.0.1:8000/api/user/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${props.token}`
+                }
+            })
+            .then(response => {
+                const userData = response.data;
+                console.log("Dados do usuário:", userData); // Verifica os dados do usuário no console
+                setUser(userData);
+            })
+            .catch(error => {
+                console.error("Erro ao buscar dados do usuário:", error);
+                router.push('/login');
+            });
         }
-    }, []);
+    }, [logado, userId]);
+
+    const toggleReports = () => setShowReports(!showReports);
 
     return (
         <>
@@ -43,7 +76,7 @@ export const LayoutDashboard = (props: IProps) => {
 
             <div className="container-fluid">
                 <div className="row">
-                    <nav id="sidebarMenu" className="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                    <nav id="sidebarMenu" className="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" style={{ overflowY: 'auto', maxHeight: '100vh' }}>
                         <div className="position-sticky pt-3">
                             <ul className="nav flex-column" style={{ marginTop: '60px' }}>
                                 <li className="nav-item mb-3">
@@ -54,7 +87,7 @@ export const LayoutDashboard = (props: IProps) => {
                                 </li>
                                 <li className="nav-item mb-3">
                                     <a className="nav-link" href={'/individual'}>
-                                        <FontAwesomeIcon icon={faUser} size="lg" style={{ marginRight: '10px' }} /> {/* Ícone de usuário */}
+                                        <FontAwesomeIcon icon={faUser} size="lg" style={{ marginRight: '10px' }} />
                                         Acompanhamento Individual
                                     </a>
                                 </li>
@@ -72,7 +105,7 @@ export const LayoutDashboard = (props: IProps) => {
                                 </li>
                                 <li className="nav-item mb-3">
                                     <a className="nav-link" href={'/percas'}>
-                                        <FontAwesomeIcon icon={faExclamationTriangle} size="lg" style={{ marginRight: '10px' }} /> {/* Ícone de alerta */}
+                                        <FontAwesomeIcon icon={faExclamationTriangle} size="lg" style={{ marginRight: '10px' }} />
                                         Percas
                                     </a>
                                 </li>
@@ -82,24 +115,60 @@ export const LayoutDashboard = (props: IProps) => {
                                         Consumo de Ração
                                     </a>
                                 </li>
-                                <li className="nav-item mb-3">
-                                    <a className="nav-link" href={'/vendas'}>
-                                        <FontAwesomeIcon icon={faCashRegister} size="lg" style={{ marginRight: '10px' }} />
-                                        Registrar Venda
-                                    </a>
-                                </li>
-                                <li className="nav-item mb-3">
-                                    <a className="nav-link" href={'/relatorio'}>
-                                        <FontAwesomeIcon icon={faChartBar} size="lg" style={{ marginRight: '10px' }} />
-                                        Relatórios
-                                    </a>
-                                </li>
-                                <li className="nav-item mb-3">
-                                    <a className="btn btn-warning" href="/listausuario">
-                                        <FontAwesomeIcon icon={faUserCog} size="lg" style={{ marginRight: '10px' }} />
-                                        Manutenção de Usuários
-                                    </a>
-                                </li>
+
+                                {/* Campos visíveis apenas para o administrador */}
+                                {user && user.tipo_usuario === 'admin' && (
+                                    <>
+                                        <li className="nav-item mb-3">
+                                            <a className="nav-link" href={'/vendas'}>
+                                                <FontAwesomeIcon icon={faCashRegister} size="lg" style={{ marginRight: '10px' }} />
+                                                Registrar Venda
+                                            </a>
+                                        </li>
+                                        <li className="nav-item mb-3">
+                                            <button className="btn nav-link d-flex align-items-center" onClick={toggleReports}>
+                                                <FontAwesomeIcon icon={faChartBar} size="lg" style={{ marginRight: '10px' }} />
+                                                Relatórios
+                                                <FontAwesomeIcon icon={faCaretDown} style={{ marginLeft: '5px' }} />
+                                            </button>
+                                            {showReports && (
+                                                <ul className="nav flex-column ms-3">
+                                                    <li className="nav-item mb-2">
+                                                        <a className="nav-link" href={'/relatorio/vendas'}>
+                                                            Relatório de Vendas
+                                                        </a>
+                                                    </li>
+                                                    <li className="nav-item mb-2">
+                                                        <a className="nav-link" href={'/relatorio/vacinas'}>
+                                                            Relatório de Vacinas
+                                                        </a>
+                                                    </li>
+                                                    <li className="nav-item mb-2">
+                                                        <a className="nav-link" href={'/relatorio/pesos'}>
+                                                            Relatório de Pesos
+                                                        </a>
+                                                    </li>
+                                                    <li className="nav-item mb-2">
+                                                        <a className="nav-link" href={'/relatorio/anotacoes'}>
+                                                            Relatório de Anotações Individuais
+                                                        </a>
+                                                    </li>
+                                                    <li className="nav-item mb-2">
+                                                        <a className="nav-link" href={'/relatorio/racao'}>
+                                                            Relatório de Consumo de Rações
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            )}
+                                        </li>
+                                        <li className="nav-item mb-3">
+                                            <a className="btn btn-warning" href="/listausuario">
+                                                <FontAwesomeIcon icon={faUserCog} size="lg" style={{ marginRight: '10px' }} />
+                                                Manutenção de Usuários
+                                            </a>
+                                        </li>
+                                    </>
+                                )}
                             </ul>
                         </div>
                     </nav>

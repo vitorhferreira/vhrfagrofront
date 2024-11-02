@@ -271,7 +271,7 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
           )}
         </div>
         <div className="mb-3">
-          <label htmlFor="data_compra" className="form-label">Data da Compra:</label>
+          <label htmlFor="data_compra" className="form-label">Data da Venda:</label>
           <input type="date" className="form-control" id="data_compra" {...register('data_compra', { required: true })} />
         </div>
         <div className="mb-3">
@@ -384,7 +384,7 @@ const ListaVendas = ({ vendas, onVendaEdit, onVendaCriada }: { vendas: Venda[], 
               <strong>Valor Unitário:</strong> {`R$ ${Number(venda.valor_unitario).toFixed(2).replace('.', ',')}`}<br />
               <strong>Quantidade Vendida:</strong> {venda.quantidade_vendida}<br />
               <strong>Prazo de Pagamento:</strong> {venda.prazo_pagamento} dias<br />
-              <strong>Data da Compra:</strong> {new Date(venda.data_compra).toLocaleDateString('pt-BR')}<br />
+              <strong>Data da Venda:</strong> {new Date(venda.data_compra).toLocaleDateString('pt-BR')}<br />
               {venda.documento && (
                 <div>
                   <strong>Documento:</strong> <a href={`http://127.0.0.1:8000/storage/${venda.documento}`} download>Baixar Documento</a><br />

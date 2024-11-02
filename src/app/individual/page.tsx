@@ -17,6 +17,7 @@ import {
 } from 'chart.js';
 import Modal from 'react-modal';
 
+
 // Registrar os componentes necessários para o gráfico
 ChartJS.register(
   CategoryScale,
@@ -312,15 +313,16 @@ const AtualizacaoAnimalForm = ({ onAnimalAtualizado, animalEdit, closeModal, ani
         </select>
       </div>
       <div className="mb-3">
+        <div className="mb-3">
         <label htmlFor="numero_lote" className="form-label">Número do Lote:</label>
-        <select className="form-control" id="numero_lote" {...register('numero_lote', { required: true })} onChange={handleLoteChange}>
-          <option value="">Selecione o lote</option>
-          {loteOption.map((lote) => (
-            <option key={lote.id} value={lote.numero_lote}>
-              {`${lote.numero_lote} - ${lote.quantidade} disponíveis`}
-            </option>
-          ))}
-        </select>
+        <input
+            type="text"
+            className="form-control"
+            id="numero_lote"
+            {...register('numero_lote', { required: true })}
+            readOnly
+        />
+        </div>
       </div>
       <div className="mb-3">
         <label htmlFor="peso" className="form-label">Peso (Kg):</label>
@@ -516,47 +518,7 @@ const DashboardAnimais = () => {
                 </div>
               </div>
 
-              {/* Formulário para Filtrar por Identificação */}
-              <div className="mb-4">
-                <h3>Filtrar por Identificação:</h3>
-                <input
-                  type="text"
-                  className="form-control mb-2"
-                  placeholder="Digite o número de identificação"
-                  value={filtroIdentificacao}
-                  onChange={(e) => setFiltroIdentificacao(e.target.value)}
-                />
-                <select className="form-control mb-2" onChange={(e) => setFiltroIdentificacao(e.target.value)}>
-                  <option value="">Selecione o número de identificação</option>
-                  {Array.from(new Set(animais.map(animal => animal.numero_identificacao))).map((identificacao) => (
-                    <option key={identificacao} value={identificacao}>
-                      {`${identificacao} - Lote ${animais.find(animal => animal.numero_identificacao === identificacao)?.numero_lote}`}
-                    </option>
-                  ))}
-                </select>
-                <button className="btn btn-primary" onClick={handleFiltrar}>Filtrar</button>
-              </div>
 
-              {/* Formulário para Filtrar por Lote */}
-              <div className="mb-4">
-                <h3>Filtrar por Lote:</h3>
-                <input
-                  type="text"
-                  className="form-control mb-2"
-                  placeholder="Digite o número do lote"
-                  value={filtroLote}
-                  onChange={(e) => setFiltroLote(e.target.value)}
-                />
-                <select className="form-control mb-2" onChange={(e) => setFiltroLote(e.target.value)}>
-                  <option value="">Selecione o número do lote</option>
-                  {Array.from(new Set(animais.map(animal => animal.numero_lote))).map((lote) => (
-                    <option key={lote} value={lote}>
-                      {lote}
-                    </option>
-                  ))}
-                </select>
-                <button className="btn btn-primary" onClick={handleFiltrarLote}>Filtrar</button>
-              </div>
 
               {mostrarGrafico && (
                 <div className="card mb-4">
@@ -567,108 +529,73 @@ const DashboardAnimais = () => {
                 </div>
               )}
 
-              <div className="card mb-4">
-                <div className="card-body">
-                  <h3>Lista de Animais</h3>
-                  <table className="table table-bordered">
-                    <thead>
-                      <tr>
-                        <th>Número de Identificação</th>
-                        <th>Número do Lote</th>
-                        <th>Peso Atual (Kg)</th>
-                        <th>Data</th>
-                        <th>Anotações</th>
-                        <th>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {animais.filter(animal => animal.numero_lote === filtroLote).map(animal => (
-                        <tr key={animal.id}>
-                          <td>{animal.numero_identificacao}</td>
-                          <td>{animal.numero_lote}</td>
-                          <td>{`${animal.peso} kg`}</td>
-                          <td>{new Date(animal.data).toLocaleDateString('pt-BR')}</td>
-                          <td>{animal.anotacoes}</td>
-                          <td>
-                            <button
-                              className="btn btn-danger"
-                              onClick={() => {
-                                setAnimalParaExcluir(animal); // Armazenar o animal que será excluído
-                                setModalConfirmacaoAberto(true); // Abrir o modal de confirmação
-                              }}
-                            >
-                              Excluir
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+
             </div>
           </main>
         </div>
 
         {/* Modal de animal não encontrado */}
         <Modal
-        isOpen={modalAberto}
-        onRequestClose={fecharModal}
-        contentLabel="Animal Não Encontrado"
-        style={{
-            content: {
-            maxWidth: '400px', // Largura menor para o modal
-            margin: 'auto',
-            top: '50%', // Centraliza verticalmente
-            transform: 'translateY(-50%)', // Ajusta para o centro exato
-            },
-        }}
-        >
-        <h2 style={{ fontSize: '18px' }}>Animal não encontrado</h2>
-        <p style={{ fontSize: '14px' }}>O animal com o número de identificação "{filtroIdentificacao}" não está cadastrado.</p>
-        <button className="btn btn-primary" onClick={fecharModal}>Fechar</button>
-        </Modal>
+            isOpen={modalAberto}
+            onRequestClose={fecharModal}
+            ariaHideApp={false}
+            contentLabel="Animal Não Encontrado"
+            style={{
+                content: {
+                maxWidth: '400px',
+                margin: 'auto',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                },
+            }}
+            >
+            <h2 style={{ fontSize: '18px' }}>Animal não encontrado</h2>
+            <p style={{ fontSize: '14px' }}>O animal com o número de identificação "{filtroIdentificacao}" não está cadastrado.</p>
+            <button className="btn btn-primary" onClick={fecharModal}>Fechar</button>
+         </Modal>
 
         {/* Modal para cadastro de novo animal */}
         <Modal
-          isOpen={modalCadastroAberto}
-          onRequestClose={fecharModalCadastro}
-          contentLabel="Cadastrar Novo Animal"
-          style={{
+        isOpen={modalCadastroAberto}
+        onRequestClose={fecharModalCadastro}
+        ariaHideApp={false}
+        contentLabel="Cadastrar Novo Animal"
+        style={{
             content: {
-              maxWidth: '600px',
-              margin: 'auto',
-              top: '100px', // Ajustar a posição vertical do modal
+            maxWidth: '600px',
+            margin: 'auto',
+            top: '100px',
             },
-          }}
+        }}
         >
-          <h2>Cadastrar Novo Animal</h2>
-          <CadastroAnimalForm onAnimalCriado={handleAnimalCriado} closeModal={fecharModalCadastro} animais={animais} />
-          <div className="d-flex justify-content-between mt-3"> {/* Flexbox para espaçar os botões */}
+        <h2>Cadastrar Novo Animal</h2>
+        <CadastroAnimalForm onAnimalCriado={handleAnimalCriado} closeModal={fecharModalCadastro} animais={animais} />
+        <div className="d-flex justify-content-between mt-3">
             <button className="btn btn-secondary" onClick={fecharModalCadastro}>Cancelar</button>
-          </div>
+        </div>
         </Modal>
 
         {/* Modal de confirmação de exclusão */}
         <Modal
-          isOpen={modalConfirmacaoAberto}
-          onRequestClose={() => setModalConfirmacaoAberto(false)}
-          contentLabel="Confirmação de Exclusão"
-          style={{
+        isOpen={modalConfirmacaoAberto}
+        onRequestClose={() => setModalConfirmacaoAberto(false)}
+        ariaHideApp={false}
+        contentLabel="Confirmação de Exclusão"
+        style={{
             content: {
-              maxWidth: '300px', // Largura menor para o modal
-              margin: 'auto',
-              top: '50%', // Centraliza verticalmente
-              transform: 'translateY(-50%)', // Ajusta para o centro exato
+            maxWidth: '300px',
+            margin: 'auto',
+            top: '50%',
+            transform: 'translateY(-50%)',
             },
-          }}
+        }}
         >
-          <h2 style={{ fontSize: '18px' }}>Confirmação de Exclusão</h2> {/* Tamanho de fonte ajustado */}
-          <p style={{ fontSize: '14px' }}>Você tem certeza que deseja excluir este animal?</p> {/* Tamanho de fonte ajustado */}
-          <div className="d-flex justify-content-between">
+        <h2 style={{ fontSize: '18px' }}>Confirmação de Exclusão</h2>
+        <p style={{ fontSize: '14px' }}>Você tem certeza que deseja excluir este animal?</p>
+        <div className="d-flex justify-content-between">
             <button className="btn btn-secondary" onClick={() => setModalConfirmacaoAberto(false)}>Cancelar</button>
             <button className="btn btn-danger" onClick={confirmarExclusao}>Excluir</button>
-          </div>
+        </div>
         </Modal>
       </div>
     </LayoutDashboard>

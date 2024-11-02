@@ -1,25 +1,16 @@
 // src/app/dashboard/dashboardClient.tsx
-'use client'; // Marque este componente como cliente
+'use client';
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, Tooltip, Legend, ArcElement, Title } from 'chart.js';
-import ChartDataLabels from 'chartjs-plugin-datalabels'; // Importar o plugin para exibir rótulos
-import 'bootstrap/dist/css/bootstrap.min.css'; // Importar Bootstrap
-
-ChartJS.register(Tooltip, Legend, ArcElement, Title, ChartDataLabels);
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const DashboardClient = ({ token }) => {
-    const [dataLotes, setDataLotes] = useState(null);
-    const [somaQuantidade, setSomaQuantidade] = useState(0); // Estado para a soma das quantidades
-    const [dataRelatorio, setDataRelatorio] = useState(null);
-    const [somaLucros, setSomaLucros] = useState(0);
-    const [dataVendas, setDataVendas] = useState(null);
-    const [somaReceber, setSomaReceber] = useState(0);
+    const [somaQuantidade, setSomaQuantidade] = useState(0);
+    const [totalInvestido, setTotalInvestido] = useState(0);
+    const [lucroTotal, setLucroTotal] = useState(0);
+    const [vendasUltimos30Dias, setVendasUltimos30Dias] = useState({ quantidade: 0, valor: 0 });
     const [lotes, setLotes] = useState([]);
-    const [relatorios, setRelatorios] = useState([]);
-    const [vendas, setVendas] = useState([]);
 
     useEffect(() => {
         const fetchLotes = async () => {
@@ -33,29 +24,17 @@ const DashboardClient = ({ token }) => {
                 const lotesData = response.data;
                 setLotes(lotesData);
 
-                // Calcular a soma das quantidades
                 const totalQuantidade = lotesData.reduce((acc, lote) => acc + lote.quantidade, 0);
-                setSomaQuantidade(totalQuantidade); // Atualizar o estado com a soma
+                setSomaQuantidade(totalQuantidade);
 
-                setDataLotes({
-                    labels: lotesData.map(lote => `Lote ${lote.numero_lote}`),
-                    datasets: [{
-                        label: 'Peso Disponível (kg)',
-                        data: lotesData.map(lote => lote.quantidade * lote.peso),
-                        backgroundColor: [
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(255, 99, 132, 0.6)',
-                            'rgba(255, 206, 86, 0.6)',
-                            'rgba(153, 102, 255, 0.6)',
-                        ],
-                    }]
-                });
+                const total = lotesData.reduce((acc, lote) => acc + lote.quantidade * parseFloat(lote.valor_individual), 0);
+                setTotalInvestido(total);
             } catch (error) {
                 console.error("Erro ao buscar dados dos lotes:", error);
             }
         };
 
-        const fetchRelatorio = async () => {
+        const fetchLucroTotal = async () => {
             try {
                 const response = await axios.get('http://127.0.0.1:8000/api/relatorio', {
                     headers: {
@@ -64,30 +43,14 @@ const DashboardClient = ({ token }) => {
                 });
 
                 const relatorioData = response.data;
-                setRelatorios(relatorioData);
-
-                const totalLucros = relatorioData.reduce((acc, rel) => acc + parseFloat(rel.lucro), 0);
-                setSomaLucros(totalLucros);
-
-                setDataRelatorio({
-                    labels: relatorioData.map(rel => `Lote ${rel.lote_id}`),
-                    datasets: [{
-                        label: 'Lucro',
-                        data: relatorioData.map(rel => rel.lucro),
-                        backgroundColor: [
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(255, 99, 132, 0.6)',
-                            'rgba(255, 206, 86, 0.6)',
-                            'rgba(153, 102, 255, 0.6)',
-                        ],
-                    }]
-                });
+                const lucro = relatorioData.reduce((acc, rel) => acc + parseFloat(rel.lucro), 0);
+                setLucroTotal(lucro);
             } catch (error) {
-                console.error("Erro ao buscar dados do relatório:", error);
+                console.error("Erro ao buscar dados de lucro:", error);
             }
         };
 
-        const fetchVendas = async () => {
+        const fetchVendasUltimos30Dias = async () => {
             try {
                 const response = await axios.get('http://127.0.0.1:8000/api/vendas', {
                     headers: {
@@ -96,51 +59,24 @@ const DashboardClient = ({ token }) => {
                 });
 
                 const vendasData = response.data;
-                setVendas(vendasData);
-
-                const totalReceber = vendasData.reduce((acc, venda) => acc + (parseFloat(venda.valor_unitario) * venda.quantidade_vendida), 0);
-                setSomaReceber(totalReceber);
-
-                setDataVendas({
-                    labels: vendasData.map(venda => `Lote ${venda.lote_id}`),
-                    datasets: [{
-                        label: 'Valor a Receber',
-                        data: vendasData.map(venda => parseFloat(venda.valor_unitario) * venda.quantidade_vendida),
-                        backgroundColor: [
-                            'rgba(153, 102, 255, 0.6)',
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(255, 206, 86, 0.6)',
-                            'rgba(255, 99, 132, 0.6)',
-                        ],
-                    }]
+                const now = new Date();
+                const vendasRecentes = vendasData.filter(venda => {
+                    const vendaDate = new Date(venda.data_compra);
+                    return (now - vendaDate) / (1000 * 60 * 60 * 24) <= 30;
                 });
+
+                const quantidade = vendasRecentes.reduce((acc, venda) => acc + venda.quantidade_vendida, 0);
+                const valor = vendasRecentes.reduce((acc, venda) => acc + parseFloat(venda.valor_unitario) * venda.quantidade_vendida, 0);
+                setVendasUltimos30Dias({ quantidade, valor });
             } catch (error) {
                 console.error("Erro ao buscar dados de vendas:", error);
             }
         };
 
         fetchLotes();
-        fetchRelatorio();
-        fetchVendas();
+        fetchLucroTotal();
+        fetchVendasUltimos30Dias();
     }, [token]);
-
-    if (!dataLotes || !dataRelatorio || !dataVendas) {
-        return <div>Carregando dados...</div>;
-    }
-
-    const optionsWithDataLabels = {
-        plugins: {
-            tooltip: { enabled: true },
-            legend: { display: true },
-            datalabels: {
-                display: true,
-                color: 'black',
-                font: { weight: 'bold', size: 12 },
-                formatter: (value) => `R$ ${value.toLocaleString()}`, // Formatar valores em R$
-            },
-            title: { display: true },
-        },
-    };
 
     return (
         <div>
@@ -155,121 +91,48 @@ const DashboardClient = ({ token }) => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                
-                {/* Peso Disponível no Pasto (Gráfico maior) */}
-                <div style={{ width: '300px', height: '300px' }}> {/* Aumentei o tamanho aqui */}
-                    <Pie
-                        data={dataLotes}
-                        options={{
-                            plugins: {
-                                tooltip: { enabled: true },
-                                legend: { display: true },
-                                datalabels: {
-                                    display: true,
-                                    color: 'black',
-                                    font: { weight: 'bold', size: 12 },
-                                    formatter: (value) => `${value} kg`, // Formatar com kg
-                                },
-                                title: { display: true, text: 'Peso Disponível (kg)' }
-                            }
-                        }}
-                    />
-                </div>
+            {/* Cartões com os dados financeiros */}
+            <div className="container text-center mb-5">
+                <div className="row">
+                    {/* Cartão Total Investido */}
+                    <div className="col-md-4">
+                        <div className="card shadow-lg p-4 mb-4 bg-light">
+                            <h2 className="text-success">Total Investido</h2>
+                            <p className="display-4 text-success font-weight-bold">
+                                R$ {totalInvestido.toLocaleString()}
+                            </p>
+                            <p className="text-muted">Investimento total nos lotes</p>
+                        </div>
+                    </div>
 
-                {/* Lucro por Lote */}
-                <div style={{ width: '200px', height: '200px' }}>
-                    <Pie data={dataRelatorio} options={{ ...optionsWithDataLabels, title: { display: true, text: 'Lucro por Lote' } }} />
-                </div>
+                    {/* Cartão Lucro Total */}
+                    <div className="col-md-4">
+                        <div className="card shadow-lg p-4 mb-4 bg-light">
+                            <h2 className="text-primary">Lucro Total</h2>
+                            <p className="display-4 text-primary font-weight-bold">
+                                R$ {lucroTotal.toLocaleString()}
+                            </p>
+                            <p className="text-muted">Lucro acumulado dos lotes</p>
+                        </div>
+                    </div>
 
-                {/* Quantidade Vendida por Lote */}
-                <div style={{ width: '200px', height: '200px' }}>
-                    <Pie
-                        data={{
-                            labels: relatorios.map(rel => `Lote ${rel.lote_id}`),
-                            datasets: [{
-                                label: 'Quantidade Vendida',
-                                data: relatorios.map(rel => rel.quantidade_vendida),
-                                backgroundColor: [
-                                    'rgba(153, 102, 255, 0.6)',
-                                    'rgba(75, 192, 192, 0.6)',
-                                    'rgba(255, 206, 86, 0.6)',
-                                    'rgba(255, 99, 132, 0.6)',
-                                ],
-                            }]
-                        }}
-                        options={{
-                            plugins: {
-                                tooltip: { enabled: true },
-                                legend: { display: true },
-                                datalabels: {
-                                    display: true,
-                                    color: 'black',
-                                    font: { weight: 'bold', size: 12 },
-                                    formatter: (value) => `${value} vendidas`, // Formatar com "vendidas"
-                                },
-                                title: { display: true, text: 'Quantidade Vendida por Lote' }
-                            }
-                        }}
-                    />
-                </div>
-
-                {/* Gastos Totais por Lote */}
-                <div style={{ width: '200px', height: '200px' }}>
-                    <Pie
-                        data={{
-                            labels: relatorios.map(rel => `Lote ${rel.lote_id}`),
-                            datasets: [{
-                                label: 'Gastos Totais',
-                                data: relatorios.map(rel => rel.total_gastos),
-                                backgroundColor: [
-                                    'rgba(255, 206, 86, 0.6)',
-                                    'rgba(75, 192, 192, 0.6)',
-                                    'rgba(255, 99, 132, 0.6)',
-                                    'rgba(153, 102, 255, 0.6)',
-                                ],
-                            }]
-                        }}
-                        options={{
-                            plugins: {
-                                tooltip: { enabled: true },
-                                legend: { display: true },
-                                datalabels: {
-                                    display: true,
-                                    color: 'black',
-                                    font: { weight: 'bold', size: 12 },
-                                    formatter: (value) => `R$ ${value.toLocaleString()}`, // Formatar valores em R$
-                                },
-                                title: { display: true, text: 'Gastos por Lote' }
-                            }
-                        }}
-                    />
-                </div>
-
-                {/* Quantidade a Receber por Lote */}
-                <div style={{ width: '200px', height: '200px' }}>
-                    <Pie
-                        data={dataVendas}
-                        options={{ ...optionsWithDataLabels, title: { display: true, text: 'Quantidade a Receber' } }}
-                    />
-                </div>
-
-                {/* Soma de Todos os Lucros */}
-                <div style={{ width: '200px', height: '200px' }}>
-                    <Pie
-                        data={{
-                            labels: ['Lucros Totais'],
-                            datasets: [{
-                                label: 'Lucros',
-                                data: [somaLucros],
-                                backgroundColor: ['rgba(54, 162, 235, 0.6)'],
-                            }]
-                        }}
-                        options={{ ...optionsWithDataLabels, title: { display: true, text: 'Soma dos Lucros' } }}
-                    />
+                    {/* Cartão Vendas nos Últimos 30 Dias */}
+                    <div className="col-md-4">
+                        <div className="card shadow-lg p-4 mb-4 bg-light">
+                            <h2 className="text-warning">Vendas Últimos 30 Dias</h2>
+                            <p className="display-5 text-warning font-weight-bold">
+                                Quantidade: {vendasUltimos30Dias.quantidade}
+                            </p>
+                            <p className="display-5 text-warning font-weight-bold">
+                                Valor: R$ {vendasUltimos30Dias.valor.toLocaleString()}
+                            </p>
+                            <p className="text-muted">Dados das vendas recentes</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
+            {/* Tabela de detalhes dos lotes */}
             <h2>Detalhes dos Lotes</h2>
             <table className="table table-striped table-bordered table-hover">
                 <thead className="thead-dark">

@@ -1,4 +1,3 @@
-// src/app/editaruser/page.tsx
 'use client'
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -11,12 +10,10 @@ import styles from './edita.module.css';
 const formatarCpfCnpj = (valor: string) => {
   valor = valor.replace(/\D/g, ''); // Remove tudo que não for dígito
   if (valor.length <= 11) {
-    // CPF
     valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
     valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
     valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
   } else {
-    // CNPJ
     valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
     valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
     valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
@@ -33,7 +30,7 @@ const EditUser = () => {
   const searchParams = useSearchParams();
   const id = searchParams.get('id') || ''; // Obtém o ID da URL
 
-  const [user, setUser] = useState({ id: '', nome: '', cpf: '', email: '', idade: '' });
+  const [user, setUser] = useState({ id: '', nome: '', cpf: '', email: '', idade: '', tipo_usuario: '' });
 
   useEffect(() => {
     fetchUser();
@@ -125,6 +122,21 @@ const EditUser = () => {
                   className="form-control"
                   required
                 />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="tipo_usuario" className="form-label">Tipo de Usuário:</label>
+                <select
+                  id="tipo_usuario"
+                  name="tipo_usuario"
+                  value={user.tipo_usuario}
+                  onChange={handleChange}
+                  className="form-select"
+                  required
+                >
+                  <option value="">Selecione o tipo de usuário</option>
+                  <option value="funcionario">Funcionário</option>
+                  <option value="admin">Admin</option>
+                </select>
               </div>
               <div className="d-flex justify-content-end">
                 <a className="btn btn-secondary mx-2" href="/listausuario">Voltar</a>

@@ -139,31 +139,31 @@ const RelatorioPage = () => {
               <p>Carregando...</p>
             ) : (
               <table {...getTableProps()} className="table table-striped table-bordered">
-                <thead className="thead-dark">
-                  {headerGroups.map((headerGroup) => (
-                    <tr {...headerGroup.getHeaderGroupProps()} key={headerGroup.id}>
-                      {headerGroup.headers.map((column) => (
-                        <th {...column.getHeaderProps()} key={column.id}>
-                          {column.render('Header')}
-                        </th>
+              <thead className="thead-dark">
+                {headerGroups.map((headerGroup, headerGroupIndex) => (
+                  <tr {...headerGroup.getHeaderGroupProps()} key={`headerGroup-${headerGroupIndex}`}>
+                    {headerGroup.headers.map((column, columnIndex) => (
+                      <th {...column.getHeaderProps()} key={`column-${columnIndex}`}>
+                        {column.render('Header')}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody {...getTableBodyProps()}>
+                {rows.map((row, rowIndex) => {
+                  prepareRow(row);
+                  return (
+                    <tr {...row.getRowProps()} key={`row-${rowIndex}`}>
+                      {row.cells.map((cell, cellIndex) => (
+                        <td {...cell.getCellProps()} key={`cell-${rowIndex}-${cellIndex}`}>
+                          {cell.render('Cell')}
+                        </td>
                       ))}
                     </tr>
-                  ))}
-                </thead>
-                <tbody {...getTableBodyProps()}>
-                  {rows.map((row) => {
-                    prepareRow(row);
-                    return (
-                      <tr {...row.getRowProps()} key={row.id}>
-                        {row.cells.map((cell) => (
-                          <td {...cell.getCellProps()} key={cell.column.id}>
-                            {cell.render('Cell')}
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
+                  );
+                })}
+              </tbody>
               </table>
             )}
           </main>
