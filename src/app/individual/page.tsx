@@ -17,7 +17,6 @@ import {
 } from 'chart.js';
 import Modal from 'react-modal';
 
-
 // Registrar os componentes necessários para o gráfico
 ChartJS.register(
   CategoryScale,
@@ -207,6 +206,7 @@ const AtualizacaoAnimalForm = ({ onAnimalAtualizado, animalEdit, closeModal, ani
   const [loteOption, setLoteOption] = useState<Lote[]>([]);
   const [quantidadeDisponivel, setQuantidadeDisponivel] = useState<number | null>(null);
   const [idLote, setIdLote] = useState<number | null>(null);
+  const [animaisLote, setAnimaisLote] = useState<string[]>([]);
 
   // Carregar lotes
   useEffect(() => {
@@ -234,17 +234,32 @@ const AtualizacaoAnimalForm = ({ onAnimalAtualizado, animalEdit, closeModal, ani
     }
   }, [animalEdit, setValue, reset]);
 
-  const handleLoteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLoteChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const loteSelecionado = event.target.value;
     setValue('numero_lote', loteSelecionado);
 
     const lote = loteOption.find(l => l.numero_lote === loteSelecionado);
     if (lote) {
       setQuantidadeDisponivel(lote.quantidade);
-      setIdLote(lote.id); // Captura o id_lote correspondente
+      setIdLote(lote.id);
+      try {
+        const response = await axios.get(`http://127.0.0.1:8000/api/animal`);
+        
+        // Filtra apenas os animais com o id_lote correspondente ao lote selecionado e remove duplicatas
+        const animaisDoLote = response.data
+          .filter((animal: Animal) => animal.id_lote === lote.id)
+          .map((animal: Animal) => animal.numero_identificacao);
+        
+        // Remove duplicatas de números de identificação
+        const animaisUnicos = Array.from(new Set(animaisDoLote));
+        setAnimaisLote(animaisUnicos);
+      } catch (error) {
+        toast.error('Erro ao buscar animais do lote');
+      }
     } else {
       setQuantidadeDisponivel(null);
       setIdLote(null);
+      setAnimaisLote([]);
     }
   };
 
@@ -286,44 +301,38 @@ const AtualizacaoAnimalForm = ({ onAnimalAtualizado, animalEdit, closeModal, ani
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="mb-3">
-        <label htmlFor="numero_identificacao" className="form-label">Número de Identificação:</label>
+        <label htmlFor="numero_lote" className="form-label">Número do Lote:</label>
         <select
           className="form-control"
-          id="numero_identificacao"
-          {...register('numero_identificacao', { required: true })}
-          onChange={(e) => {
-            setValue('numero_identificacao', e.target.value);
-            const selectedAnimal = animais.find(animal => animal.numero_identificacao === e.target.value);
-            if (selectedAnimal) {
-              setValue('numero_lote', selectedAnimal.numero_lote); // Preencher o lote automaticamente
-              const lote = loteOption.find(l => l.numero_lote === selectedAnimal.numero_lote);
-              if (lote) {
-                setIdLote(lote.id);
-                setQuantidadeDisponivel(lote.quantidade);
-              }
-            }
-          }}
+          id="numero_lote"
+          {...register('numero_lote', { required: true })}
+          onChange={handleLoteChange}
         >
-          <option value="">Selecione o número de identificação</option>
-          {Array.from(new Set(animais.map(animal => animal.numero_identificacao))).map((identificacao) => (
-            <option key={identificacao} value={identificacao}>
-              {`${identificacao} - Lote ${animais.find(animal => animal.numero_identificacao === identificacao)?.numero_lote}`} {/* Exibe identificação e lote */}
+          <option value="">Selecione o lote</option>
+          {loteOption.map((lote) => (
+            <option key={lote.id} value={lote.numero_lote}>
+              {`${lote.numero_lote} - ${lote.quantidade} disponíveis`}
             </option>
           ))}
         </select>
       </div>
-      <div className="mb-3">
+      {animaisLote.length > 0 && (
         <div className="mb-3">
-        <label htmlFor="numero_lote" className="form-label">Número do Lote:</label>
-        <input
-            type="text"
+          <label htmlFor="numero_identificacao" className="form-label">Número de Identificação:</label>
+          <select
             className="form-control"
-            id="numero_lote"
-            {...register('numero_lote', { required: true })}
-            readOnly
-        />
+            id="numero_identificacao"
+            {...register('numero_identificacao', { required: true })}
+          >
+            <option value="">Selecione o animal</option>
+            {animaisLote.map((numero_identificacao) => (
+              <option key={numero_identificacao} value={numero_identificacao}>
+                {numero_identificacao}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
+      )}
       <div className="mb-3">
         <label htmlFor="peso" className="form-label">Peso (Kg):</label>
         <input
@@ -396,7 +405,6 @@ const GraficoHistorico = ({ historico, anotacoes, onClose }: { historico: any[],
     </div>
   );
 };
-
 // Componente principal da página de cadastro e listagem de animais
 const DashboardAnimais = () => {
   const [animais, setAnimais] = useState<Animal[]>([]);

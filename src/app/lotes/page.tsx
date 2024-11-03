@@ -210,10 +210,18 @@ const Listalotes = ({ lotes, onloteEdit, onloteCriada }: { lotes: Lote[], onlote
   const [filteredLotes, setFilteredLotes] = useState<Lote[]>(lotes);
   const [showModal, setShowModal] = useState(false);
   const [loteToDelete, setLoteToDelete] = useState<Lote | null>(null);
+  const [statusFiltro, setStatusFiltro] = useState<string>(''); // Novo estado para o filtro de status
 
   useEffect(() => {
-    setFilteredLotes(lotes);
-  }, [lotes]);
+    // Aplica o filtro com base no status selecionado
+    if (statusFiltro === 'pago') {
+      setFilteredLotes(lotes.filter((lote) => lote.pago));
+    } else if (statusFiltro === 'naoPago') {
+      setFilteredLotes(lotes.filter((lote) => !lote.pago));
+    } else {
+      setFilteredLotes(lotes); // Sem filtro, exibe todos
+    }
+  }, [statusFiltro, lotes]);
 
   const handleDeleteConfirmation = (lote: Lote) => {
     setLoteToDelete(lote);
@@ -227,6 +235,7 @@ const Listalotes = ({ lotes, onloteEdit, onloteCriada }: { lotes: Lote[], onlote
         if (response.data.sucesso === true) {
           toast.success('Lote deletado com sucesso');
           onloteCriada();
+          window.location.reload();
         } else {
           toast.error('Erro ao deletar lote');
         }
@@ -250,12 +259,25 @@ const Listalotes = ({ lotes, onloteEdit, onloteCriada }: { lotes: Lote[], onlote
   return (
     <div style={{ padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
       <h2 style={{ textAlign: 'center' }}>Lista de Lotes</h2>
+      
+      {/* Filtro de status de pagamento */}
+      <select
+        className="form-select mb-3"
+        value={statusFiltro}
+        onChange={(e) => setStatusFiltro(e.target.value)}
+      >
+        <option value="">Todos</option>
+        <option value="pago">Pago</option>
+        <option value="naoPago">Não Pago</option>
+      </select>
+
       <input
         type="text"
         placeholder="Filtrar por Número do Lote"
         className="form-control mb-3"
         onChange={(e) => filterLotesByNumero(e.target.value)}
       />
+
       <ul style={{ listStyleType: 'none', padding: 0 }}>
         {filteredLotes.map((lote) => (
           <li
@@ -297,6 +319,7 @@ const Listalotes = ({ lotes, onloteEdit, onloteCriada }: { lotes: Lote[], onlote
           </li>
         ))}
       </ul>
+
       {showModal && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }} tabIndex={-1}>
           <div className="modal-dialog">
@@ -324,6 +347,7 @@ const Listalotes = ({ lotes, onloteEdit, onloteCriada }: { lotes: Lote[], onlote
   );
 };
 
+
 // Componente principal Dashboard
 const Dashboard = () => {
   const router = useRouter();
@@ -346,10 +370,12 @@ const Dashboard = () => {
   const handleloteCriada = () => {
     carregarlotes();
     setloteEdit(null);
+    window.location.reload();
   };
 
   const handleloteEdit = (lote: Lote) => {
     setloteEdit(lote);
+    window.location.reload();
   };
 
   return (

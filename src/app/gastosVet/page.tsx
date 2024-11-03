@@ -139,7 +139,7 @@ const CadastroGastovetForm = ({ ongastovetCriada, gastovetEdit }: { ongastovetCr
         <label htmlFor="motivo_gasto" className="form-label">Motivo do Gasto:</label>
         <select className="form-select" id="motivo_gasto" {...register('motivo_gasto', { required: true })}>
           <option value="" disabled>Selecione uma opção</option>
-          <option value="Compra de gado">Compra de gado</option>
+          <option value="Compra de gado">Frete</option>
           <option value="Vacina">Vacina</option>
           <option value="Gasto Veterinario">Gasto Veterinário</option>
           <option value="Produtos Veterinarios">Produtos Veterinários</option>
@@ -212,18 +212,26 @@ const CadastroGastovetForm = ({ ongastovetCriada, gastovetEdit }: { ongastovetCr
 const ListaGastovets = ({ gastovets, ongastovetEdit, ongastovetCriada }: { gastovets: Gastovet[], ongastovetEdit: (gastovet: Gastovet) => void, ongastovetCriada: () => void }) => {
   const [filteredgastovets, setFilteredgastovets] = useState<Gastovet[]>(gastovets);
   const [showModal, setShowModal] = useState(false);
-  const [modalAtrasados, setModalAtrasados] = useState(false); // Controla o modal de alertas de pagamentos atrasados
+  const [modalAtrasados, setModalAtrasados] = useState(false);
   const [gastovetToDelete, setGastovetToDelete] = useState<Gastovet | null>(null);
+  const [statusFiltro, setStatusFiltro] = useState<string>(''); // Novo estado para o filtro de status de pagamento
 
   useEffect(() => {
-    setFilteredgastovets(gastovets);
+    // Aplica o filtro com base no status selecionado
+    if (statusFiltro === 'pago') {
+      setFilteredgastovets(gastovets.filter((gastovet) => gastovet.pago));
+    } else if (statusFiltro === 'naoPago') {
+      setFilteredgastovets(gastovets.filter((gastovet) => !gastovet.pago));
+    } else {
+      setFilteredgastovets(gastovets); // Sem filtro, exibe todos
+    }
 
     // Verificar se há pagamentos atrasados
     const temAtrasados = gastovets.some((g) => new Date(g.data_pagamento) < new Date() && !g.pago);
     if (temAtrasados) {
       setModalAtrasados(true);
     }
-  }, [gastovets]);
+  }, [statusFiltro, gastovets]);
 
   const handleDeleteConfirmation = (gastovet: Gastovet) => {
     setGastovetToDelete(gastovet);
@@ -267,9 +275,9 @@ const ListaGastovets = ({ gastovets, ongastovetEdit, ongastovetCriada }: { gasto
     }
   };
 
-  const filterGastovet = (lote: string) => {
+  const filterGastovetByLote = (lote: string) => {
     if (lote !== '') {
-      setFilteredgastovets(gastovets.filter(d => d.lote.includes(lote)));
+      setFilteredgastovets(gastovets.filter((d) => d.lote.includes(lote)));
     } else {
       setFilteredgastovets(gastovets);
     }
@@ -277,8 +285,25 @@ const ListaGastovets = ({ gastovets, ongastovetEdit, ongastovetCriada }: { gasto
 
   return (
     <div>
-      <h2>Lista de Gastos:</h2>
-      <input placeholder="Filtrar por Lote" className="form-control mb-3" onChange={(e) => filterGastovet(e.target.value)} />
+      <h2>Lista de Despesas:</h2>
+
+      {/* Filtro de status de pagamento */}
+      <select
+        className="form-select mb-3"
+        value={statusFiltro}
+        onChange={(e) => setStatusFiltro(e.target.value)}
+      >
+        <option value="">Todos</option>
+        <option value="pago">Pago</option>
+        <option value="naoPago">Não Pago</option>
+      </select>
+
+      <input
+        placeholder="Filtrar por Lote"
+        className="form-control mb-3"
+        onChange={(e) => filterGastovetByLote(e.target.value)}
+      />
+
       <ul>
         {filteredgastovets.map((gastovet) => {
           const dataPagamento = new Date(gastovet.data_pagamento);
@@ -302,9 +327,9 @@ const ListaGastovets = ({ gastovets, ongastovetEdit, ongastovetCriada }: { gasto
               <strong>Valor:</strong> {`R$ ${Number(gastovet.valor).toFixed(2).replace('.', ',')}`}<br />
               <strong>Status de Pagamento:</strong> {gastovet.pago ? 'Pago' : 'Não Pago'}<br />
               <div className="actions" style={{ marginTop: '10px' }}>
-                <button className='btn btn-primary' style={{ marginRight: '10px' }} onClick={() => ongastovetEdit(gastovet)}>Editar</button>
-                <button className='btn btn-danger' style={{ marginRight: '10px' }} onClick={() => handleDeleteConfirmation(gastovet)}>Excluir</button>
-                <button className='btn btn-secondary' onClick={() => togglePagamento(gastovet)}>
+                <button className="btn btn-primary" style={{ marginRight: '10px' }} onClick={() => ongastovetEdit(gastovet)}>Editar</button>
+                <button className="btn btn-danger" style={{ marginRight: '10px' }} onClick={() => handleDeleteConfirmation(gastovet)}>Excluir</button>
+                <button className="btn btn-secondary" onClick={() => togglePagamento(gastovet)}>
                   {gastovet.pago ? 'Marcar como Não Pago' : 'Marcar como Pago'}
                 </button>
               </div>

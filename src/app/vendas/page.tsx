@@ -319,8 +319,31 @@ const verificarAtraso = (dataCompra: string, prazoPagamento: string) => {
 
 // Componente para listar as vendas
 const ListaVendas = ({ vendas, onVendaEdit, onVendaCriada }: { vendas: Venda[], onVendaEdit: (venda: Venda) => void, onVendaCriada: () => void }) => {
+  const [filteredVendas, setFilteredVendas] = useState<Venda[]>(vendas);
   const [showModal, setShowModal] = useState(false);
   const [vendaToDelete, setVendaToDelete] = useState<Venda | null>(null);
+  const [statusFiltro, setStatusFiltro] = useState<string>(''); // Novo estado para filtro de status de pagamento
+  const [recebidoFiltro, setRecebidoFiltro] = useState<string>(''); // Novo estado para filtro de status de recebimento
+
+  useEffect(() => {
+    let vendasFiltradas = vendas;
+
+    // Filtro de pagamento
+    if (statusFiltro === 'pago') {
+      vendasFiltradas = vendasFiltradas.filter((venda) => venda.recebido);
+    } else if (statusFiltro === 'naoPago') {
+      vendasFiltradas = vendasFiltradas.filter((venda) => !venda.recebido);
+    }
+
+    // Filtro de recebimento
+    if (recebidoFiltro === 'recebido') {
+      vendasFiltradas = vendasFiltradas.filter((venda) => venda.recebido);
+    } else if (recebidoFiltro === 'naoRecebido') {
+      vendasFiltradas = vendasFiltradas.filter((venda) => !venda.recebido);
+    }
+
+    setFilteredVendas(vendasFiltradas);
+  }, [statusFiltro, recebidoFiltro, vendas]);
 
   const handleDeleteConfirmation = (venda: Venda) => {
     setVendaToDelete(venda);
@@ -333,6 +356,7 @@ const ListaVendas = ({ vendas, onVendaEdit, onVendaCriada }: { vendas: Venda[], 
         await axios.delete(`http://127.0.0.1:8000/api/vendas/${vendaToDelete.id}`);
         toast.success('Venda excluída com sucesso.');
         onVendaCriada();
+        /*router.reload();*/
       } catch (error) {
         toast.error('Erro ao excluir venda.');
       } finally {
@@ -362,8 +386,20 @@ const ListaVendas = ({ vendas, onVendaEdit, onVendaCriada }: { vendas: Venda[], 
   return (
     <div>
       <h2>Lista de Vendas:</h2>
+
+      {/* Filtro de status de recebimento */}
+      <select
+        className="form-select mb-3"
+        value={recebidoFiltro}
+        onChange={(e) => setRecebidoFiltro(e.target.value)}
+      >
+        <option value="">Todos</option>
+        <option value="recebido">Recebido</option>
+        <option value="naoRecebido">Não Recebido</option>
+      </select>
+
       <ul>
-        {vendas.map((venda) => {
+        {filteredVendas.map((venda) => {
           const emAtraso = verificarAtraso(venda.data_compra, venda.prazo_pagamento) && !venda.recebido;
 
           return (
@@ -447,6 +483,7 @@ const Dashboard = () => {
   const handleVendaCriada = () => {
     carregarVendas();
     setVendaEdit(null);
+    window.location.reload();
   };
 
   const handleVendaEdit = (venda: Venda) => {

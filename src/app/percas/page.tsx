@@ -168,6 +168,7 @@ const CadastroPerdaForm = ({ onPerdaCriada }: { onPerdaCriada: () => void }) => 
 
 const Page = () => {
   const handlePerdaCriada = () => {
+    window.location.reload();
     // Lógica para atualizar a lista de perdas ou realizar outra ação após registrar a perda
   };
 

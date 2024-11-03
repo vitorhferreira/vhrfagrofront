@@ -67,25 +67,27 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
       setCpfCnpj('');
     } catch (error: any) {
       let mensagemErro = '';
-
+    
       if (error.response && error.response.status === 422) {
         const backendError = error.response.data.error;
-
+    
+        // Verifique se o erro retornado pelo backend é "CPF/CNPJ inválido"
         if (backendError === 'CPF/CNPJ inválido') {
-          mensagemErro += 'CPF/CNPJ inválido. ';
-        }
-
-        const validationErrors = error.response.data.errors;
-
-        if (validationErrors?.email) {
-          mensagemErro += 'E-mail já cadastrado. ';
-        }
-        if (validationErrors?.cpf) {
-          mensagemErro += 'CPF/CNPJ já cadastrado. ';
+          mensagemErro = 'CPF/CNPJ inválido.';
+        } else {
+          // Verifique outros erros de validação
+          const validationErrors = error.response.data.errors;
+    
+          if (validationErrors?.email) {
+            mensagemErro += 'E-mail já cadastrado. ';
+          }
+          if (validationErrors?.cpf) {
+            mensagemErro += 'CPF/CNPJ já cadastrado. ';
+          }
         }
       } else if (error.response && error.response.status === 409) {
         const { cpfExistente, emailExistente } = error.response.data;
-
+    
         if (cpfExistente && emailExistente) {
           mensagemErro = 'CPF e e-mail já estão cadastrados.';
         } else if (cpfExistente) {
@@ -96,9 +98,9 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
       } else {
         mensagemErro = 'Erro ao cadastrar usuário. Verifique os campos e tente novamente.';
       }
-
-      setErrorMessage(mensagemErro);
-      setShowErrorModal(true);
+    
+      setErrorMessage(mensagemErro); // Define a mensagem de erro final
+      setShowErrorModal(true); // Exibe o modal com a mensagem de erro
     } finally {
       setLoading(false);
     }

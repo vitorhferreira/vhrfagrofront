@@ -23,16 +23,15 @@ export const LayoutDashboard = (props: IProps) => {
     const router = useRouter();
     const cookies = parseCookies();
     const userId = cookies.userId;
-    const logado = cookies.logado === 'true'; // Verifica se o usuário está logado
+    const logado = cookies.logado === 'true';
     const [showReports, setShowReports] = useState(false);
     const [user, setUser] = useState<IUser | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Verifica se o usuário está autenticado
         if (!logado || !userId) {
-            router.push('/login'); // Redireciona para login caso não esteja autenticado
+            router.push('/login');
         } else {
-            // Busca o usuário pelo ID
             axios.get<IUser>(`http://127.0.0.1:8000/api/user/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${props.token}`
@@ -40,8 +39,9 @@ export const LayoutDashboard = (props: IProps) => {
             })
             .then(response => {
                 const userData = response.data;
-                console.log("Dados do usuário:", userData); // Verifica os dados do usuário no console
+                console.log("Dados do usuário:", userData);
                 setUser(userData);
+                setLoading(false); // Define o estado para falso após o carregamento
             })
             .catch(error => {
                 console.error("Erro ao buscar dados do usuário:", error);
@@ -51,6 +51,9 @@ export const LayoutDashboard = (props: IProps) => {
     }, [logado, userId]);
 
     const toggleReports = () => setShowReports(!showReports);
+
+    // Renderiza os componentes apenas após o carregamento completo
+    if (loading) return null;
 
     return (
         <>
@@ -162,7 +165,7 @@ export const LayoutDashboard = (props: IProps) => {
                                             )}
                                         </li>
                                         <li className="nav-item mb-3">
-                                            <a className="btn btn-warning" href="/listausuario">
+                                            <a className="nav-link" href="/listausuario">
                                                 <FontAwesomeIcon icon={faUserCog} size="lg" style={{ marginRight: '10px' }} />
                                                 Manutenção de Usuários
                                             </a>
