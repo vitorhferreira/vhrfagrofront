@@ -423,7 +423,7 @@ const ListaVendas = ({ vendas, onVendaEdit, onVendaCriada }: { vendas: Venda[], 
               <strong>Data da Venda:</strong> {new Date(venda.data_compra).toLocaleDateString('pt-BR')}<br />
               {venda.documento && (
                 <div>
-                  <strong>Documento:</strong> <a href={`http://127.0.0.1:8000/storage/${venda.documento}`} download>Baixar Documento</a><br />
+                  <strong>Documento:</strong> <a href={`http://127.0.0.1:8000/storage/${venda.documento}`} target="_blank" rel="noopener noreferrer">Abrir Documento</a><br />
                 </div>
               )}
               <strong>Status de Recebimento:</strong> {venda.recebido ? 'Recebido' : emAtraso ? 'Em Atraso' : 'Não Recebido'}<br />

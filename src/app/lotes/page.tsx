@@ -305,6 +305,16 @@ const Listalotes = ({ lotes, onloteEdit, onloteCriada }: { lotes: Lote[], onlote
             <br />
             <strong>Status de Pagamento:</strong> {lote.pago ? 'Pago' : 'Não Pago'}
             <br />
+            {/* Documento anexado */}
+            {lote.documento && (
+              <div>
+                <strong>Documento:</strong>{' '}
+                <a href={`http://127.0.0.1:8000/storage/${lote.documento}`} target="_blank" rel="noopener noreferrer">
+                  Abrir Documento
+                </a>
+                <br />
+              </div>
+            )}
             <div className="actions" style={{ marginTop: '10px' }}>
               <button className="btn btn-primary" style={{ marginRight: '10px' }} onClick={() => onloteEdit(lote)}>
                 Editar
@@ -375,7 +385,6 @@ const Dashboard = () => {
 
   const handleloteEdit = (lote: Lote) => {
     setloteEdit(lote);
-    window.location.reload();
   };
 
   return (
