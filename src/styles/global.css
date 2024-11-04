@@ -8,7 +8,7 @@ body {
     font-size: 1.1rem; /* Adjust font size */
 }
 
-header, footer {
+header {
     background: rgb(0,21,152);
     background: radial-gradient(circle, rgba(0,21,152,0.3) 20%, rgba(242,227,0,0.3) 50%, rgba(10,105,22,0.3) 80%);
 }

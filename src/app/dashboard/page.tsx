@@ -10,15 +10,12 @@ export default async function Page() {
 
     // Verificando se o usuário está logado
     if (!logado || logado.value !== 'true') {
-        // Redireciona para a página de login ou outra ação
         return (
             <div>
                 <p>Usuário não está logado.</p>
             </div>
         );
     }
-
-
 
     return (
         <>
@@ -36,28 +33,11 @@ export default async function Page() {
 
                 {/* Rodapé clean */}
                 <main className="col-md-12 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column">
-                    <footer className="py-3 mt-auto" style={{ backgroundColor: '#f8f9fa' }}>
+                    <footer className="py-3 mt-auto">
                         <div className="container">
                             <div className="row">
                                 <div className="col-md-6">
-                                    <h6>Redes Sociais:</h6>
-                                    <ul className="list-unstyled d-flex">
-                                        <li className="me-3">
-                                            <a href="#" style={{ color: '#6c757d' }}>
-                                                <i className="bi bi-facebook fs-5"></i>
-                                            </a>
-                                        </li>
-                                        <li className="me-3">
-                                            <a href="#" style={{ color: '#6c757d' }}>
-                                                <i className="bi bi-twitter fs-5"></i>
-                                            </a>
-                                        </li>
-                                        <li className="me-3">
-                                            <a href="#" style={{ color: '#6c757d' }}>
-                                                <i className="bi bi-instagram fs-5"></i>
-                                            </a>
-                                        </li>
-                                    </ul>
+                                    
                                 </div>
                                 <div className="col-md-6 text-md-end">
                                     <h6>Endereço:</h6>
@@ -67,6 +47,7 @@ export default async function Page() {
                                     <p className="mb-0" style={{ fontSize: '0.875rem', color: '#6c757d' }}>
                                         CEP: 12345-678 - Telefone: (44) 3456-7890
                                     </p>
+                                    <h6>Desenvolvido por Vitor e Renan</h6>
                                 </div>
                             </div>
                         </div>

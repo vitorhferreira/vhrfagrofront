@@ -12,6 +12,7 @@ interface ConsumoRacao {
   tipo_racao: string;
   quantidade_kg: string;
   valor_estimado: string;
+  numero_lote: string;
   data_inicial: string;
   data_final: string;
   created_at: string;
@@ -66,6 +67,11 @@ const ConsumoRacaoRelatorioPage = () => {
         Header: 'Valor Estimado',
         accessor: 'valor_estimado',
         Cell: ({ value }: { value: string }) => <span style={{ color: '#ff6600' }}>{formatCurrency(value)}</span>,
+      },
+      {
+        Header: 'Lote',
+        accessor: 'numero_lote',
+        Cell: ({ value }: { value: string }) => <span style={{ fontWeight: 'bold' }}>{value}</span>,
       },
       {
         Header: 'Data Inicial',

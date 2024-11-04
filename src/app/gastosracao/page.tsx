@@ -16,10 +16,12 @@ interface ConsumoRacao {
   valor_estimado: string;
   data_inicial: string;
   data_final: string;
+  numero_lote: string; // Novo campo para número do lote
 }
 
 interface Lote {
   id: number;
+  numero_lote: string;
   quantidade: number;
   peso: number;
   valor_individual: string;
@@ -41,7 +43,7 @@ const formatarValorEstimado = (valor: string) => {
 const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { onConsumoRacaoCriada: () => void, consumoRacaoEdit?: ConsumoRacao }) => {
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ConsumoRacao>();
   const [loading, setLoading] = useState(false);
-  const [loteOption, setLoteOption] = useState<Lote[]>([]);
+  const [loteOptions, setLoteOptions] = useState<Lote[]>([]);
   const [selectedLote, setSelectedLote] = useState<string>("");
   const [valorEstimado, setValorEstimado] = useState<string>("");
 
@@ -49,7 +51,7 @@ const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { 
     const fetchLotes = async () => {
       try {
         const response = await axios.get('http://localhost:8000/api/lote');
-        setLoteOption(response.data);
+        setLoteOptions(response.data);
       } catch (error: any) {
         toast.error('Erro ao buscar Lote');
       }
@@ -64,6 +66,7 @@ const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { 
       setValorEstimado(formatarValorEstimado(consumoRacaoEdit.valor_estimado)); // Define valor formatado
       setValue('data_inicial', consumoRacaoEdit.data_inicial);
       setValue('data_final', consumoRacaoEdit.data_final);
+      setSelectedLote(consumoRacaoEdit.numero_lote); // Define o lote selecionado
     } else {
       setSelectedLote("");
       reset();
@@ -121,6 +124,22 @@ const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { 
         {errors.tipo_racao && <div className="text-danger">{errors.tipo_racao.message}</div>}
       </div>
       <div className="mb-3">
+        <label htmlFor="numero_lote" className="form-label">Número do Lote:</label>
+        <select 
+          className="form-control" 
+          id="numero_lote" 
+          value={selectedLote} 
+          {...register('numero_lote', { required: 'O número do lote é obrigatório' })}
+          onChange={(e) => setSelectedLote(e.target.value)}
+        >
+          <option value="">Selecione um Lote</option>
+          {loteOptions.map((lote) => (
+            <option key={lote.id} value={lote.numero_lote}>{lote.numero_lote}</option>
+          ))}
+        </select>
+        {errors.numero_lote && <div className="text-danger">{errors.numero_lote.message}</div>}
+      </div>
+      <div className="mb-3">
         <label htmlFor="quantidade_kg" className="form-label">Quantidade (Kg):</label>
         <input 
           type="number" 
@@ -171,17 +190,19 @@ const CadastroConsumoRacaoForm = ({ onConsumoRacaoCriada, consumoRacaoEdit }: { 
   );
 };
 
-// Componente para listar os consumos de ração
+// Componente para listar os consumos de ração com confirmação de exclusão
 const ListaConsumoRacao = ({ consumosRacao, onConsumoRacaoEdit, onConsumoRacaoCriada }: { consumosRacao: ConsumoRacao[], onConsumoRacaoEdit: (consumoRacao: ConsumoRacao) => void, onConsumoRacaoCriada: () => void }) => {
-  const [filteredConsumosRacao, setFilteredConsumosRacao] = useState<ConsumoRacao[]>(consumosRacao);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false); // Controla a visibilidade do modal
-  const [consumoRacaoToDelete, setConsumoRacaoToDelete] = useState<ConsumoRacao | null>(null); // Controla o consumo de ração a ser excluído
+  const [consumoRacaoToDelete, setConsumoRacaoToDelete] = useState<ConsumoRacao | null>(null); // Consumo de ração a ser excluído
 
-  useEffect(() => {
-    setFilteredConsumosRacao(consumosRacao);
-  }, [consumosRacao]);
+  // Filtra os consumos de ração com base no termo de busca
+  const filteredConsumosRacao = consumosRacao.filter(consumo =>
+    consumo.tipo_racao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    consumo.numero_lote.includes(searchTerm)
+  );
 
-  const handleDeleteConfirmation = (consumoRacao: ConsumoRacao) => {
+  const confirmDelete = (consumoRacao: ConsumoRacao) => {
     setConsumoRacaoToDelete(consumoRacao);
     setShowModal(true); // Exibe o modal de confirmação
   };
@@ -189,18 +210,14 @@ const ListaConsumoRacao = ({ consumosRacao, onConsumoRacaoEdit, onConsumoRacaoCr
   const handleDelete = async () => {
     if (consumoRacaoToDelete) {
       try {
-        const response = await axios.delete(`http://127.0.0.1:8000/api/consumo_racao/${consumoRacaoToDelete.id}`);
-        if (response.data.sucesso === true) {
-          toast.success('Consumo de ração deletado com sucesso');
-          onConsumoRacaoCriada();
-        } else {
-          toast.error('Erro ao deletar consumo de ração');
-        }
+        await axios.delete(`http://127.0.0.1:8000/api/consumo_racao/${consumoRacaoToDelete.id}`);
+        toast.success('Consumo de ração excluído com sucesso');
+        onConsumoRacaoCriada();
       } catch (error) {
-        toast.error('Erro ao deletar consumo de ração');
+        toast.error('Erro ao excluir consumo de ração');
       } finally {
-        setShowModal(false); // Fecha o modal após a ação
-        setConsumoRacaoToDelete(null); // Limpa o consumo de ração a ser excluído
+        setShowModal(false); // Fecha o modal
+        setConsumoRacaoToDelete(null); // Limpa o consumo a ser excluído
       }
     }
   };
@@ -208,17 +225,24 @@ const ListaConsumoRacao = ({ consumosRacao, onConsumoRacaoEdit, onConsumoRacaoCr
   return (
     <div>
       <h2>Lista de Consumos de Ração:</h2>
+      <input
+        type="text"
+        className="form-control mb-3"
+        placeholder="Buscar por tipo de ração ou número do lote"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
       <ul>
         {filteredConsumosRacao.map((consumoRacao) => (
           <li key={consumoRacao.id} style={{ margin: '15px 0', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
-            <h3 style={{ margin: '0', color: '#007bff' }}>Tipo de Ração: {consumoRacao.tipo_racao}</h3> {/* Destacar o lote */}
+            <h3 style={{ margin: '0', color: '#007bff' }}>Tipo de Ração: {consumoRacao.tipo_racao}</h3>
             <strong>Quantidade (Kg):</strong> {consumoRacao.quantidade_kg}<br />
             <strong>Valor Estimado:</strong> {`R$ ${Number(consumoRacao.valor_estimado).toFixed(2).replace('.', ',')}`}<br />
             <strong>Data Inicial:</strong> {new Date(consumoRacao.data_inicial).toLocaleDateString('pt-BR')}<br />
             <strong>Data Final:</strong> {new Date(consumoRacao.data_final).toLocaleDateString('pt-BR')}<br />
             <div className="actions" style={{ marginTop: '10px' }}>
-              <button className='btn btn-primary' style={{ marginRight: '10px', padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: '#007bff', color: '#fff', cursor: 'pointer' }} onClick={() => onConsumoRacaoEdit(consumoRacao)}>Editar</button>
-              <button className='btn btn-danger' style={{ padding: '8px 12px', borderRadius: '4px', border: 'none', backgroundColor: '#dc3545', color: '#fff', cursor: 'pointer' }} onClick={() => handleDeleteConfirmation(consumoRacao)}>Excluir</button>
+              <button className='btn btn-primary' style={{ marginRight: '10px' }} onClick={() => onConsumoRacaoEdit(consumoRacao)}>Editar</button>
+              <button className='btn btn-danger' onClick={() => confirmDelete(consumoRacao)}>Excluir</button>
             </div>
           </li>
         ))}
@@ -254,46 +278,40 @@ const Dashboard = () => {
   const [consumosRacao, setConsumosRacao] = useState<ConsumoRacao[]>([]);
   const [consumoRacaoEdit, setConsumoRacaoEdit] = useState<ConsumoRacao | null>(null);
 
-  // Verificação de token (exemplo básico)
   useEffect(() => {
     carregarConsumosRacao();
   }, []);
 
-  // Função para carregar os consumos de ração
   const carregarConsumosRacao = async () => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/consumo_racao'); // URL da API a ser utilizada
+      const response = await axios.get('http://127.0.0.1:8000/api/consumo_racao');
       setConsumosRacao(response.data);
     } catch (error) {
       console.error('Erro ao carregar consumos de ração:', error);
     }
   };
+
   const handleConsumoRacaoCriada = () => {
     carregarConsumosRacao();
-    setConsumoRacaoEdit(null); // Limpar o consumo de ração em edição após criar/editar
+    setConsumoRacaoEdit(null);
   };
+
   const handleConsumoRacaoEdit = (consumoRacao: ConsumoRacao) => {
     setConsumoRacaoEdit(consumoRacao);
   };
 
-  // Retorno do componente Dashboard
   return (
     <LayoutDashboard token=''>
       <div className="container-fluid">
         <div className="row">
           <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div className="my-4">
-              <h2 className="mb-4"></h2>
-
-              {/* Componente de Formulário de Cadastro */}
               <div className="card mb-4">
                 <div className="card-body">
                   <h3 className="card-title">Cadastro de Consumo de Ração</h3>
                   <CadastroConsumoRacaoForm onConsumoRacaoCriada={handleConsumoRacaoCriada} consumoRacaoEdit={consumoRacaoEdit} />
                 </div>
               </div>
-
-              {/* Componente de Lista de Consumos de Ração */}
               <div className="card mb-4">
                 <div className="card-body">
                   <ListaConsumoRacao onConsumoRacaoEdit={handleConsumoRacaoEdit} onConsumoRacaoCriada={handleConsumoRacaoCriada} consumosRacao={consumosRacao} />

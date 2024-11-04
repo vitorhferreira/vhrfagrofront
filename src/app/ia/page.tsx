@@ -1,13 +1,10 @@
-"use client"; // Marca o componente como um Client Component
+"use client";
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
 import { LayoutDashboard } from '@/components/LayoutDashboard';
-import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 
-// Interface para os dados do lote e alimentação
 interface Lote {
   id: number;
   quantidade: number;
@@ -21,22 +18,23 @@ interface Lote {
   data_pagamento?: string;
 }
 
-// Interface simplificada para alimentação que armazena apenas o texto da recomendação
 interface Alimentacao {
   recomendacao: string;
 }
 
-// Função principal do Dashboard com seleção de lote e recomendação de alimentação
 const Dashboard = () => {
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [alimentacao, setAlimentacao] = useState<Alimentacao | null>(null);
-  const [loteSelecionado, setLoteSelecionado] = useState<number | null>(null);
+  const [loteSelecionado, setLoteSelecionado] = useState<Lote | null>(null);
+  const [raca, setRaca] = useState<string>('Nelore');
+  const [pastagem, setPastagem] = useState<string>('');
+  const [clima, setClima] = useState<string>('Seco');
+  const [carregando, setCarregando] = useState<boolean>(false);
 
   useEffect(() => {
     carregarLotes();
   }, []);
 
-  // Carregar lotes da API
   const carregarLotes = async () => {
     try {
       const response = await axios.get('http://127.0.0.1:8000/api/lote');
@@ -46,37 +44,62 @@ const Dashboard = () => {
     }
   };
 
-  // Obter alimentação ideal com base no peso do lote selecionado
-  const buscarAlimentacaoIdeal = async (peso: number) => {
+  const buscarAlimentacaoIdeal = async () => {
+    if (!loteSelecionado) {
+      toast.error("Selecione um lote antes de pesquisar.");
+      return;
+    }
+
+    setCarregando(true);
+
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/api/alimentacao_ideal/${peso}`);
-      
-      // Extração do texto de recomendação correto
+      const response = await axios.get(
+        `http://127.0.0.1:8000/api/alimentacao_ideal/${loteSelecionado.peso}/${loteSelecionado.idade_media}/${raca}/${pastagem}/${clima}`
+      );
+
       const recomendacao = response.data.recomendacao?.candidates?.[0]?.content?.parts?.[0]?.text || "Recomendação não disponível";
       setAlimentacao({ recomendacao });
     } catch (error) {
       console.error('Erro ao buscar alimentação ideal:', error);
       toast.error('Erro ao buscar alimentação ideal.');
+    } finally {
+      setCarregando(false);
     }
   };
 
-  // Lidar com a seleção de um lote
   const handleLoteSelecionado = (loteId: number) => {
     const lote = lotes.find((l) => l.id === loteId);
     if (lote) {
-      setLoteSelecionado(loteId);
-      buscarAlimentacaoIdeal(lote.peso);
+      setLoteSelecionado(lote);
+      setAlimentacao(null);
     }
   };
 
-  // Dividir a recomendação em itens separados
   const formatarRecomendacao = () => {
     if (!alimentacao?.recomendacao) return [];
 
-    // Divide a recomendação com base nos números
-    return alimentacao.recomendacao
-      .split(/(?=\d+\.\s)/)  // Divide cada item começando com "número + ponto + espaço"
-      .map((item) => item.trim());  // Remove espaços extras no início e no final
+    const regex = /##\s*([^#*]+)\s*|\*\*\s*([^*]+)\s*\*\*/g;
+    const result: Array<{ type: string; content: string }> = [];
+    let match;
+    let lastIndex = 0;
+
+    while ((match = regex.exec(alimentacao.recomendacao)) !== null) {
+      if (match.index > lastIndex) {
+        result.push({ type: 'text', content: alimentacao.recomendacao.slice(lastIndex, match.index).trim() });
+      }
+      if (match[1]) {
+        result.push({ type: 'subtitle', content: match[1].trim() });
+      } else if (match[2]) {
+        result.push({ type: 'title', content: match[2].trim() });
+      }
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < alimentacao.recomendacao.length) {
+      result.push({ type: 'text', content: alimentacao.recomendacao.slice(lastIndex).trim() });
+    }
+
+    return result;
   };
 
   return (
@@ -94,26 +117,96 @@ const Dashboard = () => {
                   id="selectLote"
                   className="form-select"
                   onChange={(e) => handleLoteSelecionado(Number(e.target.value))}
-                  value={loteSelecionado || ''}
+                  value={loteSelecionado?.id || ''}
                 >
                   <option value="">Selecione um lote</option>
                   {lotes.map((lote) => (
                     <option key={lote.id} value={lote.id}>
-                      Lote {lote.numero_lote} - Peso Médio: {lote.peso} Kg
+                      Lote {lote.numero_lote} - Peso Médio: {lote.peso} Kg - Idade Média: {lote.idade_media} meses
                     </option>
                   ))}
                 </select>
               </div>
 
+              {/* Campo para Raça */}
+              <div className="mb-3">
+                <label htmlFor="raca" className="form-label">Raça:</label>
+                <select
+                  id="raca"
+                  className="form-select"
+                  value={raca}
+                  onChange={(e) => setRaca(e.target.value)}
+                >
+                  <option value="Nelore">Nelore</option>
+                  <option value="Angus">Angus</option>
+                  <option value="Hereford">Hereford</option>
+                  <option value="Brahman">Brahman</option>
+                  <option value="Simental">Simental</option>
+                  <option value="Tabapuã">Tabapuã</option>
+                  <option value="Senepol">Senepol</option>
+                  <option value="Canchim">Canchim</option>
+                  <option value="Charolês">Charolês</option>
+                  <option value="Brangus">Brangus (cruzamento de Angus e Nelore)</option>
+                  <option value="Bonsmara">Bonsmara</option>
+                  <option value="Guzerá">Guzerá</option>
+                  <option value="Indubrasil">Indubrasil</option>
+                  <option value="Holandesa">Holandesa</option>
+                  <option value="Jersey">Jersey</option>
+                </select>
+              </div>
+
+              {/* Campo para Tipo de Pastagem */}
+              <div className="mb-3">
+                <label htmlFor="pastagem" className="form-label">Tipo de Pastagem:</label>
+                <input
+                  type="text"
+                  id="pastagem"
+                  className="form-control"
+                  value={pastagem}
+                  onChange={(e) => setPastagem(e.target.value)}
+                />
+              </div>
+
+              {/* Seleção de Clima */}
+              <div className="mb-3">
+                <label htmlFor="clima" className="form-label">Clima:</label>
+                <select
+                  id="clima"
+                  className="form-select"
+                  value={clima}
+                  onChange={(e) => setClima(e.target.value)}
+                >
+                  <option value="Seco">Seco</option>
+                  <option value="Chuvoso">Chuvoso</option>
+                  <option value="Quente">Quente</option>
+                  <option value="Úmido">Úmido</option>
+                  <option value="Frio">Frio</option>
+                  <option value="Ventoso">Ventoso</option>
+                </select>
+              </div>
+
+              {/* Botão para realizar a busca */}
+              <button
+                className="btn btn-primary mt-3"
+                onClick={buscarAlimentacaoIdeal}
+                disabled={!loteSelecionado || carregando}
+              >
+                {carregando ? "Carregando..." : "Pesquisar"}
+              </button>
+
               {/* Exibição da Alimentação Ideal */}
               {alimentacao && (
-                <div className="alert alert-info" role="alert">
+                <div className="alert alert-info mt-4" role="alert">
                   <h4 className="alert-heading">Alimentação Ideal</h4>
-                  <ul>
+                  <div>
                     {formatarRecomendacao().map((item, index) => (
-                      <li key={index} dangerouslySetInnerHTML={{ __html: item }}></li>
+                      <div key={index}>
+                        {item.type === 'title' && <h5 className="fw-bold">{item.content}</h5>}
+                        {item.type === 'subtitle' && <h6 className="fw-semibold">{item.content}</h6>}
+                        {item.type === 'text' && <p>{item.content}</p>}
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>

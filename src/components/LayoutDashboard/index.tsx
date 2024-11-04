@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { parseCookies } from "nookies";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faSyringe, faFileInvoiceDollar, faDrumstickBite, faExclamationTriangle, faCashRegister, faChartBar, faUserCog, faUser, faCaretDown, faRobot} from '@fortawesome/free-solid-svg-icons';
+import { faBox, faSyringe, faFileInvoiceDollar, faDrumstickBite, faExclamationTriangle, faCashRegister, faChartBar, faUserCog, faUser, faCaretDown, faRobot, faSearch} from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 
 interface IProps {
@@ -167,6 +167,11 @@ export const LayoutDashboard = (props: IProps) => {
                                                             Relatório de Consumo de Rações
                                                         </a>
                                                     </li>
+                                                    <li className="nav-item mb-2">
+                                                        <a className="nav-link" href={'/relatorio/CustoUnitario'}>
+                                                            Custo Unitario
+                                                        </a>
+                                                    </li>
                                                 </ul>
                                             )}
                                         </li>
@@ -174,6 +179,12 @@ export const LayoutDashboard = (props: IProps) => {
                                             <a className="nav-link" href="/listausuario">
                                                 <FontAwesomeIcon icon={faUserCog} size="lg" style={{ marginRight: '10px' }} />
                                                 Manutenção de Usuários
+                                            </a>
+                                        </li>
+                                        <li className="nav-item mb-3">
+                                            <a className="nav-link" href="https://www.cepea.esalq.usp.br/br/indicador/boi-gordo.aspx" target="_blank" rel="noopener noreferrer">
+                                                <FontAwesomeIcon icon={faSearch} size="lg" style={{ marginRight: '10px' }} />
+                                                Consultar Arroba Boi Gordo
                                             </a>
                                         </li>
                                     </>

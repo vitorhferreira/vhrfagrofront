@@ -132,30 +132,7 @@ const DashboardClient = ({ token }) => {
                 </div>
             </div>
 
-            {/* Tabela de detalhes dos lotes */}
-            <h2>Detalhes dos Lotes</h2>
-            <table className="table table-striped table-bordered table-hover">
-                <thead className="thead-dark">
-                    <tr>
-                        <th>Número do Lote</th>
-                        <th>Quantidade</th>
-                        <th>Peso (kg)</th>
-                        <th>Valor Individual (R$)</th>
-                        <th>Idade Média (meses)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {lotes.length ? lotes.map((lote) => (
-                        <tr key={lote.numero_lote}>
-                            <td>{lote.numero_lote}</td>
-                            <td>{lote.quantidade}</td>
-                            <td>{lote.peso}</td>
-                            <td>{lote.valor_individual}</td>
-                            <td>{lote.idade_media}</td>
-                        </tr>
-                    )) : <tr><td colSpan="5">Nenhum lote disponível</td></tr>}
-                </tbody>
-            </table>
+
         </div>
     );
 };
