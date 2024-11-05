@@ -160,6 +160,7 @@ const Login = () => {
                                 className="form-control"
                                 placeholder="Digite seu CPF!"
                                 id="cpf"
+                                maxLength={18}
                                 value={cpfCnpj} // Valor do CPF/CNPJ com máscara
                                 onChange={(e) => setCpfCnpj(formatarCpfCnpj(e.target.value))} // Aplica a máscara
                                 required

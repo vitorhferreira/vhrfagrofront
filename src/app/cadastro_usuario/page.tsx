@@ -127,6 +127,7 @@ const CadastroForm = ({ onUsuarioCadastrado }: { onUsuarioCadastrado: () => void
             className="form-control"
             id="cpfCnpj"
             value={cpfCnpj}
+            maxLength={18}
             {...register('cpfCnpj', { required: 'CPF ou CNPJ é obrigatório' })}
             onChange={(e) => setCpfCnpj(formatarCpfCnpj(e.target.value))}
           />

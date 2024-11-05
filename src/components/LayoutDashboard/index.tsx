@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from "react";
 import { parseCookies } from "nookies";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faSyringe, faFileInvoiceDollar, faDrumstickBite, faExclamationTriangle, faCashRegister, faChartBar, faUserCog, faUser, faCaretDown, faRobot, faSearch} from '@fortawesome/free-solid-svg-icons';
+import { faBox, faSyringe, faFileInvoiceDollar, faDrumstickBite, faExclamationTriangle, faCashRegister, faChartBar, faUserCog, faUser, faCaretDown, faRobot, faSearch } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 
 interface IProps {
@@ -21,6 +21,7 @@ interface IUser {
 
 export const LayoutDashboard = (props: IProps) => {
     const router = useRouter();
+    const pathname = usePathname(); // Obtenha o caminho atual
     const cookies = parseCookies();
     const userId = cookies.userId;
     const logado = cookies.logado === 'true';
@@ -41,14 +42,21 @@ export const LayoutDashboard = (props: IProps) => {
                 const userData = response.data;
                 console.log("Dados do usuário:", userData);
                 setUser(userData);
-                setLoading(false); // Define o estado para falso após o carregamento
+                setLoading(false);
+
+                // Verifique se o usuário tem permissão para acessar a rota atual
+                const forbiddenRoutes = ['/vendas', '/listausuario', '/relatorio'];
+                if (userData.tipo_usuario === 'funcionario' && forbiddenRoutes.some(route => pathname.startsWith(route))) {
+                    alert('Acesso negado!');
+                    router.push('/dashboard'); // Redireciona para uma página permitida
+                }
             })
             .catch(error => {
                 console.error("Erro ao buscar dados do usuário:", error);
                 router.push('/login');
             });
         }
-    }, [logado, userId]);
+    }, [logado, userId, pathname]); // Adicione `pathname` às dependências
 
     const toggleReports = () => setShowReports(!showReports);
 

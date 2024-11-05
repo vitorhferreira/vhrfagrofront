@@ -227,6 +227,7 @@ const CadastroVendaForm = ({ onVendaCriada, vendaEdit }: { onVendaCriada: () => 
             type="text" 
             className="form-control" 
             id="cpf_cnpj_comprador" 
+            maxLength={18}
             {...register('cpf_cnpj_comprador', { required: true })} 
             value={cpfCnpjComprador ? formatarCpfCnpj(cpfCnpjComprador) : ''} 
             onChange={(e) => setValue('cpf_cnpj_comprador', formatarCpfCnpj(e.target.value))}

@@ -235,7 +235,8 @@ const ListaConsumoRacao = ({ consumosRacao, onConsumoRacaoEdit, onConsumoRacaoCr
       <ul>
         {filteredConsumosRacao.map((consumoRacao) => (
           <li key={consumoRacao.id} style={{ margin: '15px 0', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff' }}>
-            <h3 style={{ margin: '0', color: '#007bff' }}>Tipo de Ração: {consumoRacao.tipo_racao}</h3>
+            <h3 style={{ margin: '0', color: '#007bff' }}>Lote: {consumoRacao.numero_lote}</h3>
+            <strong>Tipo de Ração:</strong> {consumoRacao.tipo_racao}<br />
             <strong>Quantidade (Kg):</strong> {consumoRacao.quantidade_kg}<br />
             <strong>Valor Estimado:</strong> {`R$ ${Number(consumoRacao.valor_estimado).toFixed(2).replace('.', ',')}`}<br />
             <strong>Data Inicial:</strong> {new Date(consumoRacao.data_inicial).toLocaleDateString('pt-BR')}<br />

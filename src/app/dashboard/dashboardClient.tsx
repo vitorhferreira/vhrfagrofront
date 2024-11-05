@@ -1,4 +1,3 @@
-// src/app/dashboard/dashboardClient.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -98,9 +97,12 @@ const DashboardClient = ({ token }) => {
                     <div className="col-md-4">
                         <div className="card shadow-lg p-4 mb-4 bg-light">
                             <h2 className="text-success">Total Investido</h2>
-                            <p className="display-4 text-success font-weight-bold">
-                                R$ {totalInvestido.toLocaleString()}
-                            </p>
+                            <div className="d-flex justify-content-center align-items-center">
+                                <span className="text-success font-weight-bold" style={{ fontSize: '2.5rem', marginRight: '5px' }}>R$</span>
+                                <span className="text-success font-weight-bold" style={{ fontSize: '2.5rem' }}>
+                                    {totalInvestido.toLocaleString()}
+                                </span>
+                            </div>
                             <p className="text-muted">Investimento total nos lotes</p>
                         </div>
                     </div>
@@ -109,9 +111,12 @@ const DashboardClient = ({ token }) => {
                     <div className="col-md-4">
                         <div className="card shadow-lg p-4 mb-4 bg-light">
                             <h2 className="text-primary">Lucro Total</h2>
-                            <p className="display-4 text-primary font-weight-bold">
-                                R$ {lucroTotal.toLocaleString()}
-                            </p>
+                            <div className="d-flex justify-content-center align-items-center">
+                                <span className="text-primary font-weight-bold" style={{ fontSize: '2.5rem', marginRight: '5px' }}>R$</span>
+                                <span className="text-primary font-weight-bold" style={{ fontSize: '2.5rem' }}>
+                                    {lucroTotal.toLocaleString()}
+                                </span>
+                            </div>
                             <p className="text-muted">Lucro acumulado dos lotes</p>
                         </div>
                     </div>
@@ -120,19 +125,20 @@ const DashboardClient = ({ token }) => {
                     <div className="col-md-4">
                         <div className="card shadow-lg p-4 mb-4 bg-light">
                             <h2 className="text-warning">Vendas Últimos 30 Dias</h2>
-                            <p className="display-5 text-warning font-weight-bold">
+                            <p className="text-warning font-weight-bold" style={{ fontSize: '1.5rem' }}>
                                 Quantidade: {vendasUltimos30Dias.quantidade}
                             </p>
-                            <p className="display-5 text-warning font-weight-bold">
-                                Valor: R$ {vendasUltimos30Dias.valor.toLocaleString()}
-                            </p>
+                            <div className="d-flex justify-content-center align-items-center">
+                                <span className="text-warning font-weight-bold" style={{ fontSize: '1.5rem', marginRight: '5px' }}>R$</span>
+                                <span className="text-warning font-weight-bold" style={{ fontSize: '1.5rem' }}>
+                                    {vendasUltimos30Dias.valor.toLocaleString()}
+                                </span>
+                            </div>
                             <p className="text-muted">Dados das vendas recentes</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-
         </div>
     );
 };
