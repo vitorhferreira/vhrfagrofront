@@ -92,6 +92,19 @@ const RelatorioPage = () => {
         accessor: 'quantidade_vendida',
       },
       {
+        Header: 'Data_venda',
+        accessor: 'updated_at',
+        Cell: ({ value }) => {
+          const date = new Date(value);
+          const formattedDate = date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+          return formattedDate;
+        },
+      },
+      {
         Header: 'Total de Gastos',
         accessor: 'total_gastos',
         Cell: ({ value }: { value: string }) => <span style={{ color: '#ff6600' }}>{formatCurrency(value)}</span>,
