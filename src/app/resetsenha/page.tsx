@@ -26,7 +26,7 @@ const RedefinirSenha = () => {
   }, [searchParams]);
 
   const validarSenha = (senha: string) => {
-    const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
+    const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
     return regex.test(senha);
   };
 
